@@ -12,6 +12,9 @@ import Contact from "./pages/Contact";
 import Admissions from "./pages/Admissions";
 import FeeDetails from "./pages/FeeDetails";
 import TCVerification from "./pages/TCVerification";
+import MandatoryPublicDisclosure from "./pages/MandatoryPublicDisclosure";
+import StaffDetails from "./pages/StaffDetails";
+import AdmissionDocuments from "./pages/AdmissionDocuments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +34,9 @@ const App = () => (
           <Route path="/admissions" element={<Admissions />} />
           <Route path="/fee-details" element={<FeeDetails />} />
           <Route path="/tc-verification" element={<TCVerification />} />
+          <Route path="/mandatory-public-disclosure" element={<MandatoryPublicDisclosure />} />
+          <Route path="/staff-details" element={<StaffDetails />} />
+          <Route path="/admission-documents" element={<AdmissionDocuments />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

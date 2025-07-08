@@ -1,5 +1,4 @@
-
-import { ArrowLeft, Edit3, Download, FileText } from 'lucide-react';
+import { ArrowLeft, Download, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -31,6 +30,65 @@ const FeeDetails = () => {
 
   const currentSession = "2024-25";
 
+  const handleDownloadPDF = () => {
+    // Create a simple PDF download functionality
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Fee Structure ${currentSession} - Shikhar Shishu Sadan</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              .header { text-align: center; margin-bottom: 20px; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>Shikhar Shishu Sadan Sr. Sec. School</h1>
+              <h2>Fee Structure ${currentSession}</h2>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Class</th>
+                  <th>Monthly Fee</th>
+                  <th>Admission Fee</th>
+                  <th>Composite Fees</th>
+                  <th>Exam Fees</th>
+                  <th>Security Fees</th>
+                  <th>Total Fees</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${feeData.map(fee => `
+                  <tr>
+                    <td>${fee.class}</td>
+                    <td>₹${fee.monthlyFee}</td>
+                    <td>₹${fee.admissionFee}</td>
+                    <td>₹${fee.compositeFees}</td>
+                    <td>${fee.examFees}</td>
+                    <td>${fee.securityFees}</td>
+                    <td>₹${fee.totalFees}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
+  const handlePrintChart = () => {
+    window.print();
+  };
+
   return (
     <div className="min-h-screen">
       <Navigation />
@@ -49,15 +107,19 @@ const FeeDetails = () => {
           </div>
 
           <div className="mb-8 flex flex-wrap gap-4 justify-center">
-            <Button className="bg-school-blue hover:bg-school-blue/90">
-              <Edit3 className="mr-2 h-4 w-4" />
-              Edit Fee Structure
-            </Button>
-            <Button variant="outline" className="border-school-orange text-school-orange hover:bg-school-orange hover:text-white">
+            <Button 
+              variant="outline" 
+              className="border-school-orange text-school-orange hover:bg-school-orange hover:text-white"
+              onClick={handleDownloadPDF}
+            >
               <Download className="mr-2 h-4 w-4" />
               Download PDF
             </Button>
-            <Button variant="outline" className="border-school-blue text-school-blue hover:bg-school-blue hover:text-white">
+            <Button 
+              variant="outline" 
+              className="border-school-blue text-school-blue hover:bg-school-blue hover:text-white"
+              onClick={handlePrintChart}
+            >
               <FileText className="mr-2 h-4 w-4" />
               Print Fee Chart
             </Button>

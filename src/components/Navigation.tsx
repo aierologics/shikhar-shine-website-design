@@ -1,8 +1,14 @@
 
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -13,9 +19,14 @@ const Navigation = () => {
     { name: 'About', href: '/about' },
     { name: 'Programs', href: '/programs' },
     { name: 'Facilities', href: '/facilities' },
+    { name: 'Contact', href: '/contact' }
+  ];
+
+  const officialItems = [
     { name: 'Fee Details', href: '/fee-details' },
     { name: 'TC Verification', href: '/tc-verification' },
-    { name: 'Contact', href: '/contact' }
+    { name: 'Staff Details', href: '/staff-details' },
+    { name: 'Documents for Admission', href: '/admission-documents' }
   ];
 
   const isActive = (href: string) => location.pathname === href;
@@ -49,6 +60,34 @@ const Navigation = () => {
                 {item.name}
               </Link>
             ))}
+            
+            {/* Official Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center text-gray-700 hover:text-school-blue transition-colors duration-200 font-medium">
+                Official
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {officialItems.map((item) => (
+                  <DropdownMenuItem key={item.name} asChild>
+                    <Link to={item.href} className="w-full">
+                      {item.name}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* MPD Link */}
+            <Link
+              to="/mandatory-public-disclosure"
+              className={`text-gray-700 hover:text-school-blue transition-colors duration-200 font-medium ${
+                isActive('/mandatory-public-disclosure') ? 'text-school-blue border-b-2 border-school-blue' : ''
+              }`}
+            >
+              Mandatory Public Disclosure
+            </Link>
+
             <Link to="/admissions">
               <Button className="bg-school-orange hover:bg-school-orange/90">
                 Admissions
@@ -84,6 +123,32 @@ const Navigation = () => {
                   {item.name}
                 </Link>
               ))}
+              
+              {/* Mobile Official submenu */}
+              <div className="px-3 py-2">
+                <p className="text-sm font-medium text-gray-900 mb-2">Official</p>
+                {officialItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="block px-3 py-1 text-sm text-gray-700 hover:text-school-blue hover:bg-gray-50 rounded-md transition-colors duration-200"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+
+              <Link
+                to="/mandatory-public-disclosure"
+                className={`block px-3 py-2 text-gray-700 hover:text-school-blue hover:bg-gray-50 rounded-md transition-colors duration-200 ${
+                  isActive('/mandatory-public-disclosure') ? 'text-school-blue bg-gray-50' : ''
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Mandatory Public Disclosure
+              </Link>
+
               <div className="px-3 py-2">
                 <Link to="/admissions" onClick={() => setIsMenuOpen(false)}>
                   <Button className="w-full bg-school-orange hover:bg-school-orange/90">
