@@ -10,6 +10,8 @@ import Programs from "./pages/Programs";
 import Facilities from "./pages/Facilities";
 import Contact from "./pages/Contact";
 import Admissions from "./pages/Admissions";
+import FeeDetails from "./pages/FeeDetails";
+import TCVerification from "./pages/TCVerification";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +29,8 @@ const App = () => (
           <Route path="/facilities" element={<Facilities />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/admissions" element={<Admissions />} />
+          <Route path="/fee-details" element={<FeeDetails />} />
+          <Route path="/tc-verification" element={<TCVerification />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
