@@ -1,6 +1,7 @@
 
 import { ArrowRight, BookOpen, Users, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import HeroCarousel from './HeroCarousel';
 
 const HeroSection = () => {
   const scrollToContact = () => {
@@ -72,20 +73,9 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* Right Content */}
+          {/* Right Content - Carousel */}
           <div className="relative animate-fade-in">
-            <div className="relative">
-              <img 
-                src="/lovable-uploads/26ea3a81-b7f3-40c6-9fdf-a5fbc0868d77.png" 
-                alt="Shikhar Shishu Sadan" 
-                className="w-full max-w-md mx-auto animate-float"
-              />
-              
-              {/* Floating Elements */}
-              <div className="absolute -top-4 -left-4 w-20 h-20 bg-school-blue/10 rounded-full animate-float" style={{ animationDelay: '0.5s' }}></div>
-              <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-school-orange/10 rounded-full animate-float" style={{ animationDelay: '1s' }}></div>
-              <div className="absolute top-1/2 -right-8 w-12 h-12 bg-school-gold/10 rounded-full animate-float" style={{ animationDelay: '1.5s' }}></div>
-            </div>
+            <HeroCarousel />
           </div>
         </div>
       </div>
