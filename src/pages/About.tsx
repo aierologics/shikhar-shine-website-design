@@ -55,14 +55,14 @@ const About = () => {
     {
       name: "Mr. Devesh Ghalot",
       position: "Vice - Principal",
-      image: "https://www.shikharschool.in/imgs/cordinator.jpg",
+      image: "https://www.shikharschool.in/imgs/vprincipal22.jpg",
       message: "Education is a shared commitment between dedicated teachers, motivated students and enthusiastic parent with high expectations.",
       fullMessage: "Today the role of a school is not only to pursue academic excellence but also to motivate and empower its students to be lifelong learners, critical thinkers and productive members of an ever- changing global society. More than a decade back Shikhar Shishu Sadan pledged to transform education. The school that is being run under the aegis of well-established management 'Western education and rural development trust' has earned its own niche. At Shikhar, we provide a platform and atmosphere to our student for multi-faceted development where children are encouraged to channelize their potential in the pursuit of excellence. This can only be possible in a holistic, student centric environment. The talents, skills and abilities of each student need to be identified, nourished and encouraged so that he/she is able to reach greater heights. Students need to be provided with a platform to think express and exhibit their skills. It is necessary to empower them to negotiate several issues that confront them, with the teacher being a facilitator."
     },
     {
       name: "Mr. R. N. Singh",
       position: "Sr. Co-ordinator",
-      image: "/placeholder.svg",
+      image: "https://www.shikharschool.in/imgs/cordinator.jpg",
       message: "We believe that each and every student has a gift to share with the world, we work hard to unlock their highest potential.",
       fullMessage: "To keep pace with a dynamically changing word our teaching methodology is well designed to leverage and challenges posed by globalization and changing technology and economy. Our pedagogy is technology integrated and ensure full-fledged knowledge of theory and Practice. With a long and recording history of achievement behind us, Shikhar Shishu Sadan Public school continued to move forward together with confidence, pride and enthusiasm."
     }

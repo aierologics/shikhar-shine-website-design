@@ -80,22 +80,21 @@ const Footer = () => {
               <div className="flex items-start space-x-3">
                 <MapPin className="h-5 w-5 text-school-orange mt-1 flex-shrink-0" />
                 <div>
-                  <p className="text-gray-300">123 Education Street</p>
-                  <p className="text-gray-300">Learning District, City - 110001</p>
+                  <p className="text-gray-300">KSHATRIYA NAGAR</p>
+                  <p className="text-gray-300">DHAMPUR, BIJNOR, UTTAR PRADESH - 246761</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="h-5 w-5 text-school-orange flex-shrink-0" />
                 <div>
-                  <p className="text-gray-300">+91 98765 43210</p>
-                  <p className="text-gray-300">+91 87654 32109</p>
+                  <p className="text-gray-300">+91 9837774888</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-school-orange flex-shrink-0" />
                 <div>
-                  <p className="text-gray-300">info@shikharsadan.edu</p>
-                  <p className="text-gray-300">admissions@shikharsadan.edu</p>
+                  <p className="text-gray-300">info@shikharsadan.in</p>
+                  <p className="text-gray-300">admissions@shikharsadan.in</p>
                 </div>
               </div>
             </div>
@@ -127,7 +126,7 @@ const Footer = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2024 Shikhar Shishu Sadan. All rights reserved.
+              © 2025 Shikhar Shishu Sadan. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="#" className="text-gray-400 hover:text-school-orange text-sm transition-colors duration-300">
