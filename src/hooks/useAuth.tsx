@@ -33,18 +33,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           // Check if user is admin
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-          
-          setIsAdmin(profile?.role === 'admin');
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+            
+            setIsAdmin(profile?.role === 'admin');
+          } catch (error) {
+            console.error('Error checking admin status:', error);
+            setIsAdmin(false);
+          }
         } else {
           setIsAdmin(false);
         }
@@ -54,6 +60,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -63,14 +70,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    console.log('Attempting to sign in with:', email);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    console.log('Sign in result:', error);
     return { error };
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
+    console.log('Attempting to sign up with:', email);
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -83,10 +93,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     });
+    console.log('Sign up result:', error);
     return { error };
   };
 
   const signOut = async () => {
+    console.log('Signing out');
     await supabase.auth.signOut();
   };
 

@@ -23,16 +23,21 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
+    console.log('Form submitted:', { isLogin, email, password: '***' });
+
     try {
       if (isLogin) {
+        console.log('Attempting login...');
         const { error } = await signIn(email, password);
         if (error) {
+          console.error('Login error:', error);
           toast({
             title: "Error",
-            description: error.message,
+            description: error.message || "Login failed",
             variant: "destructive",
           });
         } else {
+          console.log('Login successful!');
           toast({
             title: "Success",
             description: "Successfully signed in!",
@@ -40,14 +45,17 @@ const Auth = () => {
           navigate('/');
         }
       } else {
+        console.log('Attempting signup...');
         const { error } = await signUp(email, password, fullName);
         if (error) {
+          console.error('Signup error:', error);
           toast({
             title: "Error",
-            description: error.message,
+            description: error.message || "Signup failed",
             variant: "destructive",
           });
         } else {
+          console.log('Signup successful!');
           toast({
             title: "Success",
             description: "Please check your email to confirm your account!",
@@ -55,6 +63,7 @@ const Auth = () => {
         }
       }
     } catch (error) {
+      console.error('Unexpected error:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
