@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Edit3, Megaphone, LogOut } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Edit3, Megaphone, LogOut, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -42,6 +42,7 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('fees');
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editingNotice, setEditingNotice] = useState<number | null>(null);
+  const [isNoticeLoading, setIsNoticeLoading] = useState(false);
   
   // Fee data state
   const [feeData, setFeeData] = useState<FeeStructure[]>([]);
@@ -63,7 +64,7 @@ const AdminPanel = () => {
 
   const priorityOptions = [
     { value: 'high', label: 'High Priority', color: 'bg-red-500', textColor: 'text-red-500' },
-    { value: 'medium', label: 'Medium Priority', color: 'bg-yellow-500', textColor: 'text-yellow-500' },
+    { value: 'medium', label: 'Medium Priority', color: 'bg-yellow-500', textColor: 'text-red-500' },
     { value: 'low', label: 'Low Priority', color: 'bg-green-500', textColor: 'text-green-500' }
   ];
 
@@ -86,6 +87,14 @@ const AdminPanel = () => {
     fetchFeeData();
     fetchNotices();
   }, [user, isAdmin, navigate]);
+
+  // Persist user session on reload
+  useEffect(() => {
+    const storedUser = localStorage.getItem('supabase.auth.token');
+    if (storedUser && !user) {
+      window.location.reload();
+    }
+  }, [user]);
 
   const fetchFeeData = async () => {
     try {
@@ -201,6 +210,7 @@ const AdminPanel = () => {
 
   const handleSaveNotice = async (index: number) => {
     try {
+      setIsNoticeLoading(true);
       const notice = notices[index];
       if (notice.id) {
         // Update existing
@@ -232,11 +242,14 @@ const AdminPanel = () => {
         description: "Failed to save notice",
         variant: "destructive",
       });
+    } finally {
+      setIsNoticeLoading(false);
     }
   };
 
   const handleDeleteNotice = async (index: number) => {
     try {
+      setIsNoticeLoading(true);
       const notice = notices[index];
       if (notice.id) {
         const { error } = await supabase
@@ -258,6 +271,8 @@ const AdminPanel = () => {
         description: "Failed to delete notice",
         variant: "destructive",
       });
+    } finally {
+      setIsNoticeLoading(false);
     }
   };
 
@@ -269,6 +284,7 @@ const AdminPanel = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+    localStorage.clear();
   };
 
   if (!user || !isAdmin) {
@@ -280,25 +296,10 @@ const AdminPanel = () => {
       <Navigation />
       <div className="pt-16">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between mb-8">
-            <Link to="/" className="inline-flex items-center text-school-blue hover:text-school-orange transition-colors">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
-            </Link>
-            <Button
-              onClick={handleSignOut}
-              variant="outline"
-              className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </Button>
-          </div>
-
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-school-blue mb-4">Admin Panel</h1>
             <p className="text-xl text-gray-600">Manage School Data</p>
-            <p className="text-sm text-gray-500">Welcome, {user.email}</p>
+            <p className="text-sm text-gray-500">Welcome, {user.email || "Admin"}</p>
           </div>
 
           {/* Tab Navigation */}
@@ -376,65 +377,77 @@ const AdminPanel = () => {
                           {editingRow === index ? (
                             <>
                               <td className="border border-gray-300 p-2">
-                                <Input
-                                  value={editedRow.class_name}
-                                  onChange={(e) => setEditedRow({ ...editedRow, class_name: e.target.value })}
-                                  className="h-8"
-                                />
-                              </td>
-                              <td className="border border-gray-300 p-2">
-                                <Input
-                                  type="number"
-                                  value={editedRow.monthly_fee}
-                                  onChange={(e) => setEditedRow({ ...editedRow, monthly_fee: parseInt(e.target.value) })}
-                                  className="h-8"
-                                />
-                              </td>
-                              <td className="border border-gray-300 p-2">
-                                <Input
-                                  type="number"
-                                  value={editedRow.admission_fee}
-                                  onChange={(e) => setEditedRow({ ...editedRow, admission_fee: parseInt(e.target.value) })}
-                                  className="h-8"
-                                />
-                              </td>
-                              <td className="border border-gray-300 p-2">
-                                <Input
-                                  type="number"
-                                  value={editedRow.composite_fees}
-                                  onChange={(e) => setEditedRow({ ...editedRow, composite_fees: parseInt(e.target.value) })}
-                                  className="h-8"
-                                />
-                              </td>
-                              <td className="border border-gray-300 p-2">
-                                <Input
-                                  value={editedRow.exam_fees}
-                                  onChange={(e) => setEditedRow({ ...editedRow, exam_fees: e.target.value })}
-                                  className="h-8"
-                                />
-                              </td>
-                              <td className="border border-gray-300 p-2">
-                                <Input
-                                  value={editedRow.security_fees}
-                                  onChange={(e) => setEditedRow({ ...editedRow, security_fees: e.target.value })}
-                                  className="h-8"
-                                />
-                              </td>
-                              <td className="border border-gray-300 p-2">
-                                <Input
-                                  type="number"
-                                  value={editedRow.total_fees}
-                                  onChange={(e) => setEditedRow({ ...editedRow, total_fees: parseInt(e.target.value) })}
-                                  className="h-8"
-                                />
-                              </td>
-                              <td className="border border-gray-300 p-2">
-                                <Input
-                                  value={editedRow.old_fee}
-                                  onChange={(e) => setEditedRow({ ...editedRow, old_fee: e.target.value })}
-                                  className="h-8"
-                                />
-                              </td>
+                              <Input
+                                value={editedRow.class_name}
+                                onChange={(e) => setEditedRow({ ...editedRow, class_name: e.target.value })}
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="border border-gray-300 p-2">
+                              <Input
+                                type="number"
+                                value={editedRow.monthly_fee}
+                                onChange={(e) => {
+                                  const monthly_fee = parseInt(e.target.value) || 0;
+                                  const total_fees = monthly_fee + editedRow.admission_fee + editedRow.composite_fees;
+                                  setEditedRow({ ...editedRow, monthly_fee, total_fees });
+                                }}
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="border border-gray-300 p-2">
+                              <Input
+                                type="number"
+                                value={editedRow.admission_fee}
+                                onChange={(e) => {
+                                  const admission_fee = parseInt(e.target.value) || 0;
+                                  const total_fees = editedRow.monthly_fee + admission_fee + editedRow.composite_fees;
+                                  setEditedRow({ ...editedRow, admission_fee, total_fees });
+                                }}
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="border border-gray-300 p-2">
+                              <Input
+                                type="number"
+                                value={editedRow.composite_fees}
+                                onChange={(e) => {
+                                  const composite_fees = parseInt(e.target.value) || 0;
+                                  const total_fees = editedRow.monthly_fee + editedRow.admission_fee + composite_fees;
+                                  setEditedRow({ ...editedRow, composite_fees, total_fees });
+                                }}
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="border border-gray-300 p-2">
+                              <Input
+                                value={editedRow.exam_fees}
+                                onChange={(e) => setEditedRow({ ...editedRow, exam_fees: e.target.value })}
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="border border-gray-300 p-2">
+                              <Input
+                                value={editedRow.security_fees}
+                                onChange={(e) => setEditedRow({ ...editedRow, security_fees: e.target.value })}
+                                className="h-8"
+                              />
+                            </td>
+                            <td className="border border-gray-300 p-2">
+                              <Input
+                                type="number"
+                                value={editedRow.total_fees}
+                                readOnly
+                                className="h-8 bg-gray-100 cursor-not-allowed"
+                              />
+                            </td>
+                            <td className="border border-gray-300 p-2">
+                              <Input
+                                value={editedRow.old_fee}
+                                onChange={(e) => setEditedRow({ ...editedRow, old_fee: e.target.value })}
+                                className="h-8"
+                              />
+                            </td>
                               <td className="border border-gray-300 p-2">
                                 <div className="flex gap-1">
                                   <Button
@@ -612,22 +625,28 @@ const AdminPanel = () => {
                           </div>
 
                           <div className="flex gap-2">
-                            <Button
-                              onClick={() => handleSaveNotice(index)}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <Save className="mr-2 h-4 w-4" />
-                              Save Notice
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                setEditingNotice(null);
-                                setEditedNoticeData({} as Notice);
-                              }}
-                              variant="outline"
-                            >
-                              Cancel
-                            </Button>
+                              <Button
+                                onClick={() => handleSaveNotice(index)}
+                                className="bg-green-600 hover:bg-green-700"
+                                disabled={isNoticeLoading}
+                              >
+                                {isNoticeLoading ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Save className="mr-2 h-4 w-4" />
+                                )}
+                                {isNoticeLoading ? 'Saving...' : 'Save Notice'}
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  setEditingNotice(null);
+                                  setEditedNoticeData({} as Notice);
+                                }}
+                                variant="outline"
+                                disabled={isNoticeLoading}
+                              >
+                                Cancel
+                              </Button>
                           </div>
                         </CardContent>
                       ) : (
@@ -636,7 +655,7 @@ const AdminPanel = () => {
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
                                 <h3 className="font-semibold text-lg">{notice.title}</h3>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityOptions.find(p => p.value === notice.priority)?.textColor} bg-opacity-20`} style={{ backgroundColor: getPriorityColor(notice.priority).replace('bg-', '').replace('-500', '') === 'red' ? '#fef2f2' : getPriorityColor(notice.priority).replace('bg-', '').replace('-500', '') === 'yellow' ? '#fefce8' : '#f0fdf4' }}>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityOptions.find(p => p.value === notice.priority)?.textColor} bg-opacity-20`} style={{ backgroundColor: getPriorityColor(notice.priority).replace('bg-', '').replace('-500', '') === 'red' ? '#fef444' : getPriorityColor(notice.priority).replace('bg-', '').replace('-500', '') === 'yellow' ? '#eab308' : '#22c55e' }}>
                                   {priorityOptions.find(p => p.value === notice.priority)?.label}
                                 </span>
                               </div>
@@ -658,8 +677,13 @@ const AdminPanel = () => {
                                 size="sm"
                                 onClick={() => handleDeleteNotice(index)}
                                 className="bg-red-600 hover:bg-red-700"
+                                disabled={isNoticeLoading}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                {isNoticeLoading ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
                               </Button>
                             </div>
                           </div>

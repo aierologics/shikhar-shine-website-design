@@ -126,7 +126,8 @@ export type Database = {
           notice_type: Database["public"]["Enums"]["notice_type"] | null
           priority: Database["public"]["Enums"]["notice_priority"] | null
           title: string
-          updated_at: string | null
+          updated_at: string | null,
+          notice_number: number
         }
         Insert: {
           content: string
@@ -137,7 +138,8 @@ export type Database = {
           notice_type?: Database["public"]["Enums"]["notice_type"] | null
           priority?: Database["public"]["Enums"]["notice_priority"] | null
           title: string
-          updated_at?: string | null
+          updated_at?: string | null,
+          notice_number?: number | null
         }
         Update: {
           content?: string
@@ -148,7 +150,8 @@ export type Database = {
           notice_type?: Database["public"]["Enums"]["notice_type"] | "general"
           priority?: Database["public"]["Enums"]["notice_priority"] | 'low'
           title?: string
-          updated_at?: string | null
+          updated_at?: string | null,
+          notice_number?: number | null
         }
         Relationships: [
           {
@@ -241,6 +244,165 @@ export type Database = {
           key?: string
           updated_at?: string | null
           value?: string
+        }
+        Relationships: []
+      }
+      admissions: {
+        Row: {
+          student_id: string
+          student_name: string
+          date_of_birth: string
+          gender: string
+          blood_group: string | null
+          religion: string | null
+          caste: string | null
+          nationality: string
+          mother_tongue: string | null
+          aadhar_number: string | null
+          father_name: string
+          father_occupation: string | null
+          father_qualification: string | null
+          father_phone: string
+          father_email: string | null
+          father_income: number | null
+          mother_name: string
+          mother_occupation: string | null
+          mother_qualification: string | null
+          mother_phone: string
+          mother_email: string | null
+          mother_income: number | null
+          guardian_name: string | null
+          guardian_relation: string | null
+          guardian_phone: string | null
+          guardian_email: string | null
+          permanent_address: string
+          permanent_city: string
+          permanent_state: string
+          permanent_pincode: string
+          current_address: string
+          current_city: string
+          current_state: string
+          current_pincode: string
+          previous_school: string | null
+          previous_class: string | null
+          previous_percentage: number | null
+          admission_class: string
+          transport_required: boolean | null
+          medical_conditions: string | null
+          special_requirements: string | null
+          extracurricular: string | null
+          emergency_contact: string | null
+          emergency_phone: string | null
+          birth_certificate_url: string | null
+          transfer_certificate_url: string | null
+          marksheet_url: string | null
+          passport_photo_url: string | null
+          aadhar_card_url: string | null
+          address_proof_url: string | null
+        }
+        Insert: {
+          student_id: string
+          student_name: string
+          date_of_birth: string
+          gender: string
+          blood_group?: string | null
+          religion?: string | null
+          caste?: string | null
+          nationality: string
+          mother_tongue?: string | null
+          aadhar_number?: string | null
+          father_name: string
+          father_occupation?: string | null
+          father_qualification?: string | null
+          father_phone: string
+          father_email?: string | null
+          father_income?: number | null
+          mother_name: string
+          mother_occupation?: string | null
+          mother_qualification?: string | null
+          mother_phone: string
+          mother_email?: string | null
+          mother_income?: number | null
+          guardian_name?: string | null
+          guardian_relation?: string | null
+          guardian_phone?: string | null
+          guardian_email?: string | null
+          permanent_address: string
+          permanent_city: string
+          permanent_state: string
+          permanent_pincode: string
+          current_address: string
+          current_city: string
+          current_state: string
+          current_pincode: string
+          previous_school?: string | null
+          previous_class?: string | null
+          previous_percentage?: number | null
+          admission_class: string
+          transport_required?: boolean | null
+          medical_conditions?: string | null
+          special_requirements?: string | null
+          extracurricular?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          birth_certificate_url?: string | null
+          transfer_certificate_url?: string | null
+          marksheet_url?: string | null
+          passport_photo_url?: string | null
+          aadhar_card_url?: string | null
+          address_proof_url?: string | null
+        }
+        Update: {
+          student_id?: string
+          student_name?: string
+          date_of_birth?: string
+          gender?: string
+          blood_group?: string | null
+          religion?: string | null
+          caste?: string | null
+          nationality?: string
+          mother_tongue?: string | null
+          aadhar_number?: string | null
+          father_name?: string
+          father_occupation?: string | null
+          father_qualification?: string | null
+          father_phone?: string
+          father_email?: string | null
+          father_income?: number | null
+          mother_name?: string
+          mother_occupation?: string | null
+          mother_qualification?: string | null
+          mother_phone?: string
+          mother_email?: string | null
+          mother_income?: number | null
+          guardian_name?: string | null
+          guardian_relation?: string | null
+          guardian_phone?: string | null
+          guardian_email?: string | null
+          permanent_address?: string
+          permanent_city?: string
+          permanent_state?: string
+          permanent_pincode?: string
+          current_address?: string
+          current_city?: string
+          current_state?: string
+          current_pincode?: string
+          previous_school?: string | null
+          previous_class?: string | null
+          previous_percentage?: number | null
+          admission_class?: string
+          transport_required?: boolean | null
+          medical_conditions?: string | null
+          special_requirements?: string | null
+          extracurricular?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          birth_certificate_url?: string | null
+          transfer_certificate_url?: string | null
+          marksheet_url?: string | null
+          passport_photo_url?: string | null
+          aadhar_card_url?: string | null
+          address_proof_url?: string | null
         }
         Relationships: []
       }

@@ -20,6 +20,7 @@ import AdminPanel from "./pages/AdminPanel";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ContactSection from "./components/ContactSection";
+import Contact from "./pages/Contact";
 
 const queryClient = new QueryClient();
 
@@ -33,7 +34,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<ContactSection />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/programs" element={<Programs />} />
             <Route path="/facilities" element={<Facilities />} />
             <Route path="/gallery" element={<Gallery />} />
