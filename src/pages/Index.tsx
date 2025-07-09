@@ -1,8 +1,9 @@
 
 import Navigation from '@/components/Navigation';
 import HeroSection from '@/components/HeroSection';
-import AboutSection from '@/components/AboutSection';
-import ProgramsSection from '@/components/ProgramsSection';
+import NoticeBoardSection from '@/components/NoticeBoardSection';
+import AchievementsSection from '@/components/AchievementsSection';
+import SchoolLifeSection from '@/components/SchoolLifeSection';
 import FacilitiesSection from '@/components/FacilitiesSection';
 import Footer from '@/components/Footer';
 
@@ -12,8 +13,9 @@ const Index = () => {
       <Navigation />
       <HeroSection />
       <div className="space-y-0">
-        <AboutSection />
-        <ProgramsSection />
+        <NoticeBoardSection />
+        <AchievementsSection />
+        <SchoolLifeSection />
         <FacilitiesSection />
       </div>
       <Footer />

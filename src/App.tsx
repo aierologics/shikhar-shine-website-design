@@ -15,6 +15,7 @@ import TCVerification from "./pages/TCVerification";
 import MandatoryPublicDisclosure from "./pages/MandatoryPublicDisclosure";
 import StaffDetails from "./pages/StaffDetails";
 import AdmissionDocuments from "./pages/AdmissionDocuments";
+import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 import ContactSection from "./components/ContactSection";
 
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/mandatory-public-disclosure" element={<MandatoryPublicDisclosure />} />
           <Route path="/staff-details" element={<StaffDetails />} />
           <Route path="/admission-documents" element={<AdmissionDocuments />} />
+          <Route path="/admin" element={<AdminPanel />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
