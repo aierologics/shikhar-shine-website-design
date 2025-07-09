@@ -17,6 +17,8 @@ const Footer = () => {
     { name: "Contact", href: "#contact" }
   ];
 
+
+
   const scrollToSection = (href: string) => {
     const element = document.querySelector(href);
     if (element) {
@@ -31,15 +33,15 @@ const Footer = () => {
           {/* School Info */}
           <div>
             <div className="flex items-center space-x-3 mb-6">
-              <img 
-                src="/lovable-uploads/26ea3a81-b7f3-40c6-9fdf-a5fbc0868d77.png" 
-                alt="Shikhar Shishu Sadan Logo" 
+              <img
+                src="/lovable-uploads/26ea3a81-b7f3-40c6-9fdf-a5fbc0868d77.png"
+                alt="Shikhar Shishu Sadan Logo"
                 className="h-10 w-10 object-contain"
               />
               <span className="text-xl font-bold">Shikhar Shishu Sadan</span>
             </div>
             <p className="text-gray-300 leading-relaxed mb-6">
-              Nurturing bright minds for a better tomorrow. We are committed to providing 
+              Nurturing bright minds for a better tomorrow. We are committed to providing
               quality education that empowers students to reach their full potential.
             </p>
             <div className="flex space-x-4">

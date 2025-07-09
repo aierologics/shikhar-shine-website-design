@@ -16,6 +16,7 @@ import MandatoryPublicDisclosure from "./pages/MandatoryPublicDisclosure";
 import StaffDetails from "./pages/StaffDetails";
 import AdmissionDocuments from "./pages/AdmissionDocuments";
 import NotFound from "./pages/NotFound";
+import ContactSection from "./components/ContactSection";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<ContactSection />} />
           <Route path="/programs" element={<Programs />} />
           <Route path="/facilities" element={<Facilities />} />
           <Route path="/gallery" element={<Gallery />} />

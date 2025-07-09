@@ -127,7 +127,7 @@ const MandatoryPublicDisclosure = () => {
                     <TableRow>
                       <TableHead className="font-bold text-school-blue">S.NO</TableHead>
                       <TableHead className="font-bold text-school-blue">DOCUMENTS/INFORMATION</TableHead>
-                      <TableHead className="font-bold text-school-blue">UPLOAD DOCUMENTS</TableHead>
+                      <TableHead className="font-bold text-school-blue">DOCUMENTS</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -161,7 +161,7 @@ const MandatoryPublicDisclosure = () => {
                     <TableRow>
                       <TableHead className="font-bold text-school-blue">S.NO</TableHead>
                       <TableHead className="font-bold text-school-blue">DOCUMENT/INFORMATION</TableHead>
-                      <TableHead className="font-bold text-school-blue">UPLOAD DOCUMENTS</TableHead>
+                      <TableHead className="font-bold text-school-blue">DOCUMENTS</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

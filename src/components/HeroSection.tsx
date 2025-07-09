@@ -2,6 +2,7 @@
 import { ArrowRight, BookOpen, Users, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import HeroCarousel from './HeroCarousel';
+import { Link } from 'react-router-dom';
 
 const HeroSection = () => {
   const scrollToContact = () => {
@@ -18,33 +19,28 @@ const HeroSection = () => {
           {/* Left Content */}
           <div className="animate-fade-in">
             <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Nurturing 
+              Nurturing
               <span className="text-school-blue"> Bright </span>
-              Minds for a 
+              Minds for a
               <span className="text-school-orange"> Better </span>
               Tomorrow
             </h1>
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              At Shikhar Shishu Sadan, we believe every child is unique and deserves 
-              quality education that fosters creativity, critical thinking, and character 
+              At Shikhar Shishu Sadan, we believe every child is unique and deserves
+              quality education that fosters creativity, critical thinking, and character
               development in a nurturing environment.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
-              <Button 
-                size="lg" 
-                className="bg-school-blue hover:bg-school-blue/90 text-white px-8 py-4 text-lg"
-                onClick={scrollToContact}
-              >
-                Enroll Now
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="border-school-orange text-school-orange hover:bg-school-orange hover:text-white px-8 py-4 text-lg"
-              >
-                Virtual Tour
-              </Button>
+              <Link to="/admissions">
+                <Button
+                  size="lg"
+                  className="bg-school-blue hover:bg-school-blue/90 text-white px-8 py-4 text-lg"
+                >
+                  Enroll Now
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+
             </div>
 
             {/* Stats */}
