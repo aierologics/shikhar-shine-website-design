@@ -1,50 +1,45 @@
 
+import { useState, useEffect } from 'react';
 import { Calendar, Megaphone, Pin } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Notice {
+  id: string;
+  title: string;
+  content: string;
+  notice_type: string;
+  priority: string;
+  date: string;
+}
 
 const NoticeBoardSection = () => {
-  const notices = [
-    {
-      id: 1,
-      title: "Independence Day Holiday",
-      content: "School will remain closed on 15th August for Independence Day celebration.",
-      date: "2024-08-10",
-      type: "holiday",
-      priority: "high"
-    },
-    {
-      id: 2,
-      title: "New Admission Forms Available",
-      content: "Admission forms for academic year 2025-26 are now available online and at the school office.",
-      date: "2024-07-25",
-      type: "admission",
-      priority: "high"
-    },
-    {
-      id: 3,
-      title: "Parent-Teacher Meeting",
-      content: "Monthly PTM scheduled for all classes on 20th August 2024 from 9:00 AM to 12:00 PM.",
-      date: "2024-08-05",
-      type: "meeting",
-      priority: "medium"
-    },
-    {
-      id: 4,
-      title: "Science Exhibition",
-      content: "Annual Science Exhibition will be held on 25th August. Students are encouraged to participate.",
-      date: "2024-08-01",
-      type: "event",
-      priority: "medium"
-    },
-    {
-      id: 5,
-      title: "Sports Day Registration",
-      content: "Registration for Sports Day events is now open. Contact your class teacher for more details.",
-      date: "2024-07-30",
-      type: "sports",
-      priority: "low"
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchNotices();
+  }, []);
+
+  const fetchNotices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notices')
+        .select('*')
+        .order('date', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error('Error fetching notices:', error);
+      } else {
+        setNotices(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching notices:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -76,6 +71,23 @@ const NoticeBoardSection = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <section className="py-16 bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              📋 Notice Board
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Loading latest announcements...
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-16 bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4">
@@ -97,7 +109,7 @@ const NoticeBoardSection = () => {
               >
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    {getTypeIcon(notice.type)}
+                    {getTypeIcon(notice.notice_type)}
                     {notice.title}
                     <span className="ml-auto text-sm text-gray-500 font-normal">
                       {new Date(notice.date).toLocaleDateString()}

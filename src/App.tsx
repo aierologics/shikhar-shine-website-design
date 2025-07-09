@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Programs from "./pages/Programs";
@@ -16,6 +17,7 @@ import MandatoryPublicDisclosure from "./pages/MandatoryPublicDisclosure";
 import StaffDetails from "./pages/StaffDetails";
 import AdmissionDocuments from "./pages/AdmissionDocuments";
 import AdminPanel from "./pages/AdminPanel";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ContactSection from "./components/ContactSection";
 
@@ -23,28 +25,31 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<ContactSection />} />
-          <Route path="/programs" element={<Programs />} />
-          <Route path="/facilities" element={<Facilities />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/admissions" element={<Admissions />} />
-          <Route path="/fee-details" element={<FeeDetails />} />
-          <Route path="/tc-verification" element={<TCVerification />} />
-          <Route path="/mandatory-public-disclosure" element={<MandatoryPublicDisclosure />} />
-          <Route path="/staff-details" element={<StaffDetails />} />
-          <Route path="/admission-documents" element={<AdmissionDocuments />} />
-          <Route path="/admin" element={<AdminPanel />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<ContactSection />} />
+            <Route path="/programs" element={<Programs />} />
+            <Route path="/facilities" element={<Facilities />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/admissions" element={<Admissions />} />
+            <Route path="/fee-details" element={<FeeDetails />} />
+            <Route path="/tc-verification" element={<TCVerification />} />
+            <Route path="/mandatory-public-disclosure" element={<MandatoryPublicDisclosure />} />
+            <Route path="/staff-details" element={<StaffDetails />} />
+            <Route path="/admission-documents" element={<AdmissionDocuments />} />
+            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

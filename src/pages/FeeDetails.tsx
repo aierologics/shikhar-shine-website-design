@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Download, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -5,33 +6,49 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { supabase } from '@/integrations/supabase/client';
+
+interface FeeStructure {
+  id: string;
+  class_name: string;
+  monthly_fee: number;
+  admission_fee: number;
+  composite_fees: number;
+  exam_fees: string;
+  security_fees: string;
+  total_fees: number;
+  old_fee: string;
+}
 
 const FeeDetails = () => {
-  // Fee data structure - can be easily updated by management
-  const feeData = [
-    { class: 'Play', monthlyFee: 700, admissionFee: 1650, compositeFees: 700, examFees: '--------', securityFees: '--------', totalFees: 3050, oldFee: '-----' },
-    { class: 'Nurs.', monthlyFee: 850, admissionFee: 1700, compositeFees: 1100, examFees: '300.00', securityFees: '1000.00', totalFees: 4650, oldFee: '1950' },
-    { class: 'K.G.', monthlyFee: 900, admissionFee: 1800, compositeFees: 1100, examFees: '150.00/200.00', securityFees: '1000.00', totalFees: 4800, oldFee: '2000' },
-    { class: 'I', monthlyFee: 1100, admissionFee: 2000, compositeFees: 1300, examFees: '200.00/250.00', securityFees: '1000.00', totalFees: 5400, oldFee: '2400' },
-    { class: 'II', monthlyFee: 1200, admissionFee: 2200, compositeFees: 1300, examFees: '200.00/250.00', securityFees: '1000.00', totalFees: 5700, oldFee: '2500' },
-    { class: 'III', monthlyFee: 1300, admissionFee: 2400, compositeFees: 1400, examFees: '200.00/300.00', securityFees: '1000.00', totalFees: 6100, oldFee: '2700' },
-    { class: 'IV', monthlyFee: 1400, admissionFee: 2600, compositeFees: 1400, examFees: '200.00/300.00', securityFees: '1000.00', totalFees: 6400, oldFee: '2800' },
-    { class: 'V', monthlyFee: 1500, admissionFee: 2800, compositeFees: 1400, examFees: '200.00/300.00', securityFees: '1000.00', totalFees: 6700, oldFee: '2900' },
-    { class: 'VI', monthlyFee: 1550, admissionFee: 3300, compositeFees: 1500, examFees: '240/350/350', securityFees: '1000.00', totalFees: 7350, oldFee: '3050' },
-    { class: 'VII', monthlyFee: 1650, admissionFee: 3300, compositeFees: 1500, examFees: '240/350/350', securityFees: '1000.00', totalFees: 7450, oldFee: '3150' },
-    { class: 'VIII', monthlyFee: 1700, admissionFee: 3300, compositeFees: 1500, examFees: '240/350/350', securityFees: '1000.00', totalFees: 7500, oldFee: '3200' },
-    { class: 'IX', monthlyFee: 1900, admissionFee: 4600, compositeFees: 1800, examFees: '280/400/400', securityFees: '1500.00', totalFees: 9800, oldFee: '3700' },
-    { class: 'X', monthlyFee: 2020, admissionFee: 6800, compositeFees: 2000, examFees: '280/400/400', securityFees: '1500.00', totalFees: 12320, oldFee: '4020' },
-    { class: 'XI Com.', monthlyFee: 2500, admissionFee: 7000, compositeFees: 2600, examFees: '350/450/450', securityFees: '1500.00', totalFees: 13600, oldFee: '5100' },
-    { class: 'XI Sc.', monthlyFee: 2750, admissionFee: 7000, compositeFees: 2600, examFees: '350/450/450', securityFees: '1500.00', totalFees: 13850, oldFee: '3250' },
-    { class: 'XII Com.', monthlyFee: 2850, admissionFee: 11000, compositeFees: 3000, examFees: '350/450/450', securityFees: '1500.00', totalFees: 18350, oldFee: '5850' },
-    { class: 'XII Sc.', monthlyFee: 3150, admissionFee: 11000, compositeFees: 3000, examFees: '350/450/450', securityFees: '1500.00', totalFees: 18650, oldFee: '6150' }
-  ];
-
+  const [feeData, setFeeData] = useState<FeeStructure[]>([]);
+  const [loading, setLoading] = useState(true);
   const currentSession = "2024-25";
 
+  useEffect(() => {
+    fetchFeeData();
+  }, []);
+
+  const fetchFeeData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('fee_structure')
+        .select('*')
+        .order('class_name');
+
+      if (error) {
+        console.error('Error fetching fee data:', error);
+      } else {
+        setFeeData(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching fee data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDownloadPDF = () => {
-    // Create a simple PDF download functionality
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`
@@ -66,13 +83,13 @@ const FeeDetails = () => {
               <tbody>
                 ${feeData.map(fee => `
                   <tr>
-                    <td>${fee.class}</td>
-                    <td>₹${fee.monthlyFee}</td>
-                    <td>₹${fee.admissionFee}</td>
-                    <td>₹${fee.compositeFees}</td>
-                    <td>${fee.examFees}</td>
-                    <td>${fee.securityFees}</td>
-                    <td>₹${fee.totalFees}</td>
+                    <td>${fee.class_name}</td>
+                    <td>₹${fee.monthly_fee}</td>
+                    <td>₹${fee.admission_fee}</td>
+                    <td>₹${fee.composite_fees}</td>
+                    <td>${fee.exam_fees}</td>
+                    <td>${fee.security_fees}</td>
+                    <td>₹${fee.total_fees}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -88,6 +105,22 @@ const FeeDetails = () => {
   const handlePrintChart = () => {
     window.print();
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Navigation />
+        <div className="pt-16">
+          <div className="container mx-auto px-4 py-8">
+            <div className="text-center">
+              <p className="text-xl">Loading fee details...</p>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -145,16 +178,16 @@ const FeeDetails = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {feeData.map((fee, index) => (
-                      <TableRow key={index} className="hover:bg-gray-50">
-                        <TableCell className="font-medium text-school-orange">{fee.class}</TableCell>
-                        <TableCell>₹{fee.monthlyFee}</TableCell>
-                        <TableCell>₹{fee.admissionFee}</TableCell>
-                        <TableCell>₹{fee.compositeFees}</TableCell>
-                        <TableCell>{fee.examFees}</TableCell>
-                        <TableCell>{fee.securityFees}</TableCell>
-                        <TableCell className="font-semibold text-school-blue">₹{fee.totalFees}</TableCell>
-                        <TableCell>{fee.oldFee}</TableCell>
+                    {feeData.map((fee) => (
+                      <TableRow key={fee.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium text-school-orange">{fee.class_name}</TableCell>
+                        <TableCell>₹{fee.monthly_fee}</TableCell>
+                        <TableCell>₹{fee.admission_fee}</TableCell>
+                        <TableCell>₹{fee.composite_fees}</TableCell>
+                        <TableCell>{fee.exam_fees}</TableCell>
+                        <TableCell>{fee.security_fees}</TableCell>
+                        <TableCell className="font-semibold text-school-blue">₹{fee.total_fees}</TableCell>
+                        <TableCell>{fee.old_fee}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

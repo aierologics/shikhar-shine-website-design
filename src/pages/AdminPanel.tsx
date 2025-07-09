@@ -1,7 +1,6 @@
-
-import { useState } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Edit3, Lock, Unlock, Megaphone } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Save, Plus, Trash2, Edit3, Megaphone, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -11,54 +10,45 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+
+interface FeeStructure {
+  id?: string;
+  class_name: string;
+  monthly_fee: number;
+  admission_fee: number;
+  composite_fees: number;
+  exam_fees: string;
+  security_fees: string;
+  total_fees: number;
+  old_fee: string;
+}
+
+interface Notice {
+  id?: string;
+  title: string;
+  content: string;
+  notice_type: string;
+  priority: string;
+  date: string;
+}
 
 const AdminPanel = () => {
+  const { user, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState('fees');
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editingNotice, setEditingNotice] = useState<number | null>(null);
-
-  // Sample fee data - this would normally come from a database
-  const [feeData, setFeeData] = useState([
-    { class: 'Play', monthlyFee: 700, admissionFee: 1650, compositeFees: 700, examFees: '--------', securityFees: '--------', totalFees: 3050, oldFee: '-----' },
-    { class: 'Nurs.', monthlyFee: 850, admissionFee: 1700, compositeFees: 1100, examFees: '300.00', securityFees: '1000.00', totalFees: 4650, oldFee: '1950' },
-    { class: 'K.G.', monthlyFee: 900, admissionFee: 1800, compositeFees: 1100, examFees: '150.00/200.00', securityFees: '1000.00', totalFees: 4800, oldFee: '2000' },
-    { class: 'I', monthlyFee: 1100, admissionFee: 2000, compositeFees: 1300, examFees: '200.00/250.00', securityFees: '1000.00', totalFees: 5400, oldFee: '2400' },
-    { class: 'II', monthlyFee: 1200, admissionFee: 2200, compositeFees: 1300, examFees: '200.00/250.00', securityFees: '1000.00', totalFees: 5700, oldFee: '2500' },
-  ]);
-
-  // Sample notices data
-  const [notices, setNotices] = useState([
-    {
-      id: 1,
-      title: "Independence Day Holiday",
-      content: "School will remain closed on 15th August for Independence Day celebration.",
-      date: "2024-08-10",
-      type: "holiday",
-      priority: "high"
-    },
-    {
-      id: 2,
-      title: "New Admission Forms Available",
-      content: "Admission forms for academic year 2025-26 are now available online and at the school office.",
-      date: "2024-07-25",
-      type: "admission",
-      priority: "high"
-    },
-    {
-      id: 3,
-      title: "Parent-Teacher Meeting",
-      content: "Monthly PTM scheduled for all classes on 20th August 2024 from 9:00 AM to 12:00 PM.",
-      date: "2024-08-05",
-      type: "meeting",
-      priority: "medium"
-    },
-  ]);
-
-  const [editedRow, setEditedRow] = useState<any>({});
-  const [editedNotice, setEditedNoticeData] = useState<any>({});
+  
+  // Fee data state
+  const [feeData, setFeeData] = useState<FeeStructure[]>([]);
+  const [editedRow, setEditedRow] = useState<FeeStructure>({} as FeeStructure);
+  
+  // Notice data state
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [editedNotice, setEditedNoticeData] = useState<Notice>({} as Notice);
 
   const noticeTypes = [
     { value: 'holiday', label: 'Holiday' },
@@ -76,27 +66,59 @@ const AdminPanel = () => {
     { value: 'low', label: 'Low Priority', color: 'bg-green-500', textColor: 'text-green-500' }
   ];
 
-  const getPriorityColor = (priority: string) => {
-    const option = priorityOptions.find(p => p.value === priority);
-    return option ? option.color : 'bg-gray-500';
-  };
-
-  const getPriorityTextColor = (priority: string) => {
-    const option = priorityOptions.find(p => p.value === priority);
-    return option ? option.textColor : 'text-gray-500';
-  };
-
-  const handleLogin = () => {
-    if (password === 'admin123') {
-      setIsAuthenticated(true);
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    
+    if (!isAdmin) {
       toast({
-        title: "Success",
-        description: "Successfully logged in to admin panel",
+        title: "Access Denied",
+        description: "You need admin privileges to access this page.",
+        variant: "destructive",
       });
-    } else {
+      navigate('/');
+      return;
+    }
+
+    fetchFeeData();
+    fetchNotices();
+  }, [user, isAdmin, navigate]);
+
+  const fetchFeeData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('fee_structure')
+        .select('*')
+        .order('class_name');
+
+      if (error) throw error;
+      setFeeData(data || []);
+    } catch (error) {
+      console.error('Error fetching fee data:', error);
       toast({
         title: "Error",
-        description: "Invalid password",
+        description: "Failed to fetch fee data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchNotices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notices')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      setNotices(data || []);
+    } catch (error) {
+      console.error('Error fetching notices:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch notices",
         variant: "destructive",
       });
     }
@@ -108,52 +130,66 @@ const AdminPanel = () => {
     setEditedRow({ ...feeData[index] });
   };
 
-  const handleSave = (index: number) => {
-    const updatedData = [...feeData];
-    updatedData[index] = editedRow;
-    setFeeData(updatedData);
-    setEditingRow(null);
-    toast({
-      title: "Success",
-      description: "Fee details updated successfully",
-    });
+  const handleSave = async (index: number) => {
+    try {
+      const fee = feeData[index];
+      if (fee.id) {
+        // Update existing
+        const { error } = await supabase
+          .from('fee_structure')
+          .update(editedRow)
+          .eq('id', fee.id);
+        
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from('fee_structure')
+          .insert([editedRow]);
+        
+        if (error) throw error;
+      }
+
+      setEditingRow(null);
+      fetchFeeData();
+      toast({
+        title: "Success",
+        description: "Fee details updated successfully",
+      });
+    } catch (error) {
+      console.error('Error saving fee data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save fee data",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleCancel = () => {
-    setEditingRow(null);
-    setEditedRow({});
-  };
-
-  const handleAddRow = () => {
-    const newRow = {
-      class: '',
-      monthlyFee: 0,
-      admissionFee: 0,
-      compositeFees: 0,
-      examFees: '',
-      securityFees: '',
-      totalFees: 0,
-      oldFee: ''
-    };
-    setFeeData([...feeData, newRow]);
-    setEditingRow(feeData.length);
-    setEditedRow(newRow);
-  };
-
-  const handleDeleteRow = (index: number) => {
-    const updatedData = feeData.filter((_, i) => i !== index);
-    setFeeData(updatedData);
-    toast({
-      title: "Success",
-      description: "Row deleted successfully",
-    });
-  };
-
-  const handleInputChange = (field: string, value: any) => {
-    setEditedRow({
-      ...editedRow,
-      [field]: value
-    });
+  const handleDeleteRow = async (index: number) => {
+    try {
+      const fee = feeData[index];
+      if (fee.id) {
+        const { error } = await supabase
+          .from('fee_structure')
+          .delete()
+          .eq('id', fee.id);
+        
+        if (error) throw error;
+        fetchFeeData();
+        toast({
+          title: "Success",
+          description: "Fee structure deleted successfully",
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting fee data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete fee data",
+        variant: "destructive",
+      });
+    }
   };
 
   // Notice management functions
@@ -162,98 +198,80 @@ const AdminPanel = () => {
     setEditedNoticeData({ ...notices[index] });
   };
 
-  const handleSaveNotice = (index: number) => {
-    const updatedNotices = [...notices];
-    updatedNotices[index] = editedNotice;
-    setNotices(updatedNotices);
-    setEditingNotice(null);
-    toast({
-      title: "Success",
-      description: "Notice updated successfully",
-    });
+  const handleSaveNotice = async (index: number) => {
+    try {
+      const notice = notices[index];
+      if (notice.id) {
+        // Update existing
+        const { error } = await supabase
+          .from('notices')
+          .update(editedNotice)
+          .eq('id', notice.id);
+        
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from('notices')
+          .insert([editedNotice]);
+        
+        if (error) throw error;
+      }
+
+      setEditingNotice(null);
+      fetchNotices();
+      toast({
+        title: "Success",
+        description: "Notice updated successfully",
+      });
+    } catch (error) {
+      console.error('Error saving notice:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save notice",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleCancelNotice = () => {
-    setEditingNotice(null);
-    setEditedNoticeData({});
+  const handleDeleteNotice = async (index: number) => {
+    try {
+      const notice = notices[index];
+      if (notice.id) {
+        const { error } = await supabase
+          .from('notices')
+          .delete()
+          .eq('id', notice.id);
+        
+        if (error) throw error;
+        fetchNotices();
+        toast({
+          title: "Success",
+          description: "Notice deleted successfully",
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting notice:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete notice",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleAddNotice = () => {
-    const newNotice = {
-      id: Math.max(...notices.map(n => n.id)) + 1,
-      title: '',
-      content: '',
-      date: new Date().toISOString().split('T')[0],
-      type: 'general',
-      priority: 'medium'
-    };
-    setNotices([newNotice, ...notices]);
-    setEditingNotice(0);
-    setEditedNoticeData(newNotice);
+  const getPriorityColor = (priority: string) => {
+    const option = priorityOptions.find(p => p.value === priority);
+    return option ? option.color : 'bg-gray-500';
   };
 
-  const handleDeleteNotice = (index: number) => {
-    const updatedNotices = notices.filter((_, i) => i !== index);
-    setNotices(updatedNotices);
-    toast({
-      title: "Success",
-      description: "Notice deleted successfully",
-    });
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
   };
 
-  const handleNoticeInputChange = (field: string, value: any) => {
-    setEditedNoticeData({
-      ...editedNotice,
-      [field]: value
-    });
-  };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen">
-        <Navigation />
-        <div className="pt-16">
-          <div className="container mx-auto px-4 py-8">
-            <Link to="/" className="inline-flex items-center text-school-blue hover:text-school-orange transition-colors mb-8">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
-            </Link>
-
-            <div className="max-w-md mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-center flex items-center justify-center gap-2">
-                    <Lock className="h-5 w-5" />
-                    Admin Login
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter admin password"
-                      onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                    />
-                  </div>
-                  <Button onClick={handleLogin} className="w-full bg-school-blue hover:bg-school-blue/90">
-                    <Unlock className="mr-2 h-4 w-4" />
-                    Login
-                  </Button>
-                  <p className="text-sm text-gray-500 text-center">
-                    Demo password: admin123
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
+  if (!user || !isAdmin) {
+    return null;
   }
 
   return (
@@ -267,17 +285,19 @@ const AdminPanel = () => {
               Back to Home
             </Link>
             <Button
-              onClick={() => setIsAuthenticated(false)}
+              onClick={handleSignOut}
               variant="outline"
               className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
             >
-              Logout
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
             </Button>
           </div>
 
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-school-blue mb-4">Admin Panel</h1>
             <p className="text-xl text-gray-600">Manage School Data</p>
+            <p className="text-sm text-gray-500">Welcome, {user.email}</p>
           </div>
 
           {/* Tab Navigation */}
@@ -300,13 +320,34 @@ const AdminPanel = () => {
             </div>
           </div>
 
-          {/* Fee Management Tab */}
           {activeTab === 'fees' && (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-school-blue">Fee Structure Management</CardTitle>
-                  <Button onClick={handleAddRow} className="bg-green-600 hover:bg-green-700">
+                  <Button onClick={() => {
+                    setFeeData([{
+                      class_name: '',
+                      monthly_fee: 0,
+                      admission_fee: 0,
+                      composite_fees: 0,
+                      exam_fees: '',
+                      security_fees: '',
+                      total_fees: 0,
+                      old_fee: ''
+                    }, ...feeData]);
+                    setEditingRow(0);
+                    setEditedRow({
+                      class_name: '',
+                      monthly_fee: 0,
+                      admission_fee: 0,
+                      composite_fees: 0,
+                      exam_fees: '',
+                      security_fees: '',
+                      total_fees: 0,
+                      old_fee: ''
+                    });
+                  }} className="bg-green-600 hover:bg-green-700">
                     <Plus className="mr-2 h-4 w-4" />
                     Add New Class
                   </Button>
@@ -330,66 +371,66 @@ const AdminPanel = () => {
                     </thead>
                     <tbody>
                       {feeData.map((row, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
+                        <tr key={row.id || index} className="hover:bg-gray-50">
                           {editingRow === index ? (
                             <>
                               <td className="border border-gray-300 p-2">
                                 <Input
-                                  value={editedRow.class}
-                                  onChange={(e) => handleInputChange('class', e.target.value)}
+                                  value={editedRow.class_name}
+                                  onChange={(e) => setEditedRow({ ...editedRow, class_name: e.target.value })}
                                   className="h-8"
                                 />
                               </td>
                               <td className="border border-gray-300 p-2">
                                 <Input
                                   type="number"
-                                  value={editedRow.monthlyFee}
-                                  onChange={(e) => handleInputChange('monthlyFee', parseInt(e.target.value))}
+                                  value={editedRow.monthly_fee}
+                                  onChange={(e) => setEditedRow({ ...editedRow, monthly_fee: parseInt(e.target.value) })}
                                   className="h-8"
                                 />
                               </td>
                               <td className="border border-gray-300 p-2">
                                 <Input
                                   type="number"
-                                  value={editedRow.admissionFee}
-                                  onChange={(e) => handleInputChange('admissionFee', parseInt(e.target.value))}
+                                  value={editedRow.admission_fee}
+                                  onChange={(e) => setEditedRow({ ...editedRow, admission_fee: parseInt(e.target.value) })}
                                   className="h-8"
                                 />
                               </td>
                               <td className="border border-gray-300 p-2">
                                 <Input
                                   type="number"
-                                  value={editedRow.compositeFees}
-                                  onChange={(e) => handleInputChange('compositeFees', parseInt(e.target.value))}
+                                  value={editedRow.composite_fees}
+                                  onChange={(e) => setEditedRow({ ...editedRow, composite_fees: parseInt(e.target.value) })}
                                   className="h-8"
                                 />
                               </td>
                               <td className="border border-gray-300 p-2">
                                 <Input
-                                  value={editedRow.examFees}
-                                  onChange={(e) => handleInputChange('examFees', e.target.value)}
+                                  value={editedRow.exam_fees}
+                                  onChange={(e) => setEditedRow({ ...editedRow, exam_fees: e.target.value })}
                                   className="h-8"
                                 />
                               </td>
                               <td className="border border-gray-300 p-2">
                                 <Input
-                                  value={editedRow.securityFees}
-                                  onChange={(e) => handleInputChange('securityFees', e.target.value)}
+                                  value={editedRow.security_fees}
+                                  onChange={(e) => setEditedRow({ ...editedRow, security_fees: e.target.value })}
                                   className="h-8"
                                 />
                               </td>
                               <td className="border border-gray-300 p-2">
                                 <Input
                                   type="number"
-                                  value={editedRow.totalFees}
-                                  onChange={(e) => handleInputChange('totalFees', parseInt(e.target.value))}
+                                  value={editedRow.total_fees}
+                                  onChange={(e) => setEditedRow({ ...editedRow, total_fees: parseInt(e.target.value) })}
                                   className="h-8"
                                 />
                               </td>
                               <td className="border border-gray-300 p-2">
                                 <Input
-                                  value={editedRow.oldFee}
-                                  onChange={(e) => handleInputChange('oldFee', e.target.value)}
+                                  value={editedRow.old_fee}
+                                  onChange={(e) => setEditedRow({ ...editedRow, old_fee: e.target.value })}
                                   className="h-8"
                                 />
                               </td>
@@ -405,7 +446,10 @@ const AdminPanel = () => {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={handleCancel}
+                                    onClick={() => {
+                                      setEditingRow(null);
+                                      setEditedRow({} as FeeStructure);
+                                    }}
                                     className="h-8 w-8 p-0"
                                   >
                                     ✕
@@ -415,14 +459,14 @@ const AdminPanel = () => {
                             </>
                           ) : (
                             <>
-                              <td className="border border-gray-300 p-2 font-medium">{row.class}</td>
-                              <td className="border border-gray-300 p-2">₹{row.monthlyFee}</td>
-                              <td className="border border-gray-300 p-2">₹{row.admissionFee}</td>
-                              <td className="border border-gray-300 p-2">₹{row.compositeFees}</td>
-                              <td className="border border-gray-300 p-2">{row.examFees}</td>
-                              <td className="border border-gray-300 p-2">{row.securityFees}</td>
-                              <td className="border border-gray-300 p-2 font-semibold">₹{row.totalFees}</td>
-                              <td className="border border-gray-300 p-2">{row.oldFee}</td>
+                              <td className="border border-gray-300 p-2 font-medium">{row.class_name}</td>
+                              <td className="border border-gray-300 p-2">₹{row.monthly_fee}</td>
+                              <td className="border border-gray-300 p-2">₹{row.admission_fee}</td>
+                              <td className="border border-gray-300 p-2">₹{row.composite_fees}</td>
+                              <td className="border border-gray-300 p-2">{row.exam_fees}</td>
+                              <td className="border border-gray-300 p-2">{row.security_fees}</td>
+                              <td className="border border-gray-300 p-2 font-semibold">₹{row.total_fees}</td>
+                              <td className="border border-gray-300 p-2">{row.old_fee}</td>
                               <td className="border border-gray-300 p-2">
                                 <div className="flex gap-1">
                                   <Button
@@ -452,13 +496,28 @@ const AdminPanel = () => {
             </Card>
           )}
 
-          {/* Notice Management Tab */}
           {activeTab === 'notices' && (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-school-blue">Notice Board Management</CardTitle>
-                  <Button onClick={handleAddNotice} className="bg-green-600 hover:bg-green-700">
+                  <Button onClick={() => {
+                    setNotices([{
+                      title: '',
+                      content: '',
+                      notice_type: 'general',
+                      priority: 'medium',
+                      date: new Date().toISOString().split('T')[0]
+                    }, ...notices]);
+                    setEditingNotice(0);
+                    setEditedNoticeData({
+                      title: '',
+                      content: '',
+                      notice_type: 'general',
+                      priority: 'medium',
+                      date: new Date().toISOString().split('T')[0]
+                    });
+                  }} className="bg-green-600 hover:bg-green-700">
                     <Plus className="mr-2 h-4 w-4" />
                     Add New Notice
                   </Button>
@@ -480,7 +539,7 @@ const AdminPanel = () => {
 
                 <div className="space-y-4">
                   {notices.map((notice, index) => (
-                    <Card key={notice.id} className="border-l-4" style={{ borderLeftColor: getPriorityColor(notice.priority).replace('bg-', '').replace('-500', '') === 'red' ? '#ef4444' : getPriorityColor(notice.priority).replace('bg-', '').replace('-500', '') === 'yellow' ? '#eab308' : '#22c55e' }}>
+                    <Card key={notice.id || index} className="border-l-4" style={{ borderLeftColor: getPriorityColor(notice.priority).replace('bg-', '').replace('-500', '') === 'red' ? '#ef4444' : getPriorityColor(notice.priority).replace('bg-', '').replace('-500', '') === 'yellow' ? '#eab308' : '#22c55e' }}>
                       {editingNotice === index ? (
                         <CardContent className="p-4 space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -489,7 +548,7 @@ const AdminPanel = () => {
                               <Input
                                 id="title"
                                 value={editedNotice.title}
-                                onChange={(e) => handleNoticeInputChange('title', e.target.value)}
+                                onChange={(e) => setEditedNoticeData({ ...editedNotice, title: e.target.value })}
                                 placeholder="Notice title"
                               />
                             </div>
@@ -499,7 +558,7 @@ const AdminPanel = () => {
                                 id="date"
                                 type="date"
                                 value={editedNotice.date}
-                                onChange={(e) => handleNoticeInputChange('date', e.target.value)}
+                                onChange={(e) => setEditedNoticeData({ ...editedNotice, date: e.target.value })}
                               />
                             </div>
                           </div>
@@ -507,7 +566,7 @@ const AdminPanel = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <Label htmlFor="type">Type</Label>
-                              <Select value={editedNotice.type} onValueChange={(value) => handleNoticeInputChange('type', value)}>
+                              <Select value={editedNotice.notice_type} onValueChange={(value) => setEditedNoticeData({ ...editedNotice, notice_type: value })}>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select type" />
                                 </SelectTrigger>
@@ -522,7 +581,7 @@ const AdminPanel = () => {
                             </div>
                             <div>
                               <Label htmlFor="priority">Priority</Label>
-                              <Select value={editedNotice.priority} onValueChange={(value) => handleNoticeInputChange('priority', value)}>
+                              <Select value={editedNotice.priority} onValueChange={(value) => setEditedNoticeData({ ...editedNotice, priority: value })}>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select priority" />
                                 </SelectTrigger>
@@ -545,7 +604,7 @@ const AdminPanel = () => {
                             <Textarea
                               id="content"
                               value={editedNotice.content}
-                              onChange={(e) => handleNoticeInputChange('content', e.target.value)}
+                              onChange={(e) => setEditedNoticeData({ ...editedNotice, content: e.target.value })}
                               placeholder="Notice content"
                               rows={3}
                             />
@@ -560,7 +619,10 @@ const AdminPanel = () => {
                               Save Notice
                             </Button>
                             <Button
-                              onClick={handleCancelNotice}
+                              onClick={() => {
+                                setEditingNotice(null);
+                                setEditedNoticeData({} as Notice);
+                              }}
                               variant="outline"
                             >
                               Cancel
@@ -573,13 +635,13 @@ const AdminPanel = () => {
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
                                 <h3 className="font-semibold text-lg">{notice.title}</h3>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityTextColor(notice.priority)} bg-opacity-20`} style={{ backgroundColor: getPriorityColor(notice.priority).replace('bg-', '').replace('-500', '') === 'red' ? '#fef2f2' : getPriorityColor(notice.priority).replace('bg-', '').replace('-500', '') === 'yellow' ? '#fefce8' : '#f0fdf4' }}>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityOptions.find(p => p.value === notice.priority)?.textColor} bg-opacity-20`} style={{ backgroundColor: getPriorityColor(notice.priority).replace('bg-', '').replace('-500', '') === 'red' ? '#fef2f2' : getPriorityColor(notice.priority).replace('bg-', '').replace('-500', '') === 'yellow' ? '#fefce8' : '#f0fdf4' }}>
                                   {priorityOptions.find(p => p.value === notice.priority)?.label}
                                 </span>
                               </div>
                               <p className="text-gray-600 mb-2">{notice.content}</p>
                               <div className="flex gap-4 text-sm text-gray-500">
-                                <span>Type: {noticeTypes.find(t => t.value === notice.type)?.label}</span>
+                                <span>Type: {noticeTypes.find(t => t.value === notice.notice_type)?.label}</span>
                                 <span>Date: {new Date(notice.date).toLocaleDateString()}</span>
                               </div>
                             </div>
