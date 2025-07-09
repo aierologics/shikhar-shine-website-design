@@ -24,13 +24,14 @@ interface FeeStructure {
   total_fees: number;
   old_fee: string;
 }
-
+type NoticeType = 'holiday' | 'admission' | 'meeting' | 'event' | 'sports' | 'exam' | 'general';
+type NoticePriority = 'high' | 'medium' | 'low';
 interface Notice {
   id?: string;
   title: string;
   content: string;
-  notice_type: string;
-  priority: string;
+  notice_type: NoticeType;
+  priority: NoticePriority;
   date: string;
 }
 
@@ -566,7 +567,7 @@ const AdminPanel = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <Label htmlFor="type">Type</Label>
-                              <Select value={editedNotice.notice_type} onValueChange={(value) => setEditedNoticeData({ ...editedNotice, notice_type: value })}>
+                              <Select value={editedNotice.notice_type} onValueChange={(value) => setEditedNoticeData({ ...editedNotice, notice_type: value as NoticeType })}>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select type" />
                                 </SelectTrigger>
@@ -581,7 +582,7 @@ const AdminPanel = () => {
                             </div>
                             <div>
                               <Label htmlFor="priority">Priority</Label>
-                              <Select value={editedNotice.priority} onValueChange={(value) => setEditedNoticeData({ ...editedNotice, priority: value })}>
+                              <Select value={editedNotice.priority} onValueChange={(value) => setEditedNoticeData({ ...editedNotice, priority: value as NoticePriority })}>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select priority" />
                                 </SelectTrigger>
