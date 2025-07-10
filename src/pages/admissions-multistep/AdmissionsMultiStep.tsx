@@ -69,7 +69,7 @@ const AdmissionsMultiStep = () => {
     aadharCard: null,
     addressProof: null,
   });
-const toast = useToast();
+  const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -110,7 +110,7 @@ const toast = useToast();
       const file = files[0];
       const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
       if (!allowedTypes.includes(file.type)) {
-        toast.toast({
+        toast({
           title: 'Invalid File Type',
           description: 'Only PDF, JPG, JPEG, and PNG files are allowed.',
           variant: 'destructive',
@@ -118,7 +118,7 @@ const toast = useToast();
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        toast.toast({
+        toast({
           title: 'File Too Large',
           description: 'File size must be less than 5MB.',
           variant: 'destructive',
@@ -138,24 +138,32 @@ const toast = useToast();
 
   const uploadFile = async (file: File | null, path: string) => {
     if (!file) return null;
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExt}`;
-    const filePath = `${path}/${fileName}`;
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${uuidv4()}.${fileExt}`;
+      const filePath = `${path}/${fileName}`;
 
-    const { error } = await supabase.storage
-      .from('admissions')
-      .upload(filePath, file);
+      const { error } = await supabase.storage
+        .from('admissions')
+        .upload(filePath, file);
 
-    if (error) throw error;
+      if (error) throw error;
 
-    const { data } = supabase.storage.from('admissions').getPublicUrl(filePath);
-    return data.publicUrl;
+      const { data } = supabase.storage.from('admissions').getPublicUrl(filePath);
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      return null;
+    }
   };
 
   const handleSubmit = async () => {
     try {
+      // Generate unique student ID
       let studentId = generateStudentId();
-
+      
+      // Check if student ID already exists and generate new one if needed
       for (let i = 0; i < 5; i++) {
         const { data } = await supabase
           .from('admissions')
@@ -167,13 +175,24 @@ const toast = useToast();
         studentId = generateStudentId();
       }
 
-      const birthCertificateUrl = await uploadFile(formData.birthCertificate, 'birthCertificates');
-      const transferCertificateUrl = await uploadFile(formData.transferCertificate, 'transferCertificates');
-      const marksheetUrl = await uploadFile(formData.marksheet, 'marksheets');
-      const passportPhotoUrl = await uploadFile(formData.passportPhoto, 'passportPhotos');
-      const aadharCardUrl = await uploadFile(formData.aadharCard, 'aadharCards');
-      const addressProofUrl = await uploadFile(formData.addressProof, 'addressProofs');
+      // Upload documents
+      const [
+        birthCertificateUrl,
+        transferCertificateUrl,
+        marksheetUrl,
+        passportPhotoUrl,
+        aadharCardUrl,
+        addressProofUrl
+      ] = await Promise.all([
+        uploadFile(formData.birthCertificate, 'birth-certificates'),
+        uploadFile(formData.transferCertificate, 'transfer-certificates'),
+        uploadFile(formData.marksheet, 'marksheets'),
+        uploadFile(formData.passportPhoto, 'passport-photos'),
+        uploadFile(formData.aadharCard, 'aadhar-cards'),
+        uploadFile(formData.addressProof, 'address-proofs'),
+      ]);
 
+      // Insert admission record
       const { error } = await supabase.from('admissions').insert({
         student_id: studentId,
         student_name: formData.studentName,
@@ -225,15 +244,17 @@ const toast = useToast();
         passport_photo_url: passportPhotoUrl,
         aadhar_card_url: aadharCardUrl,
         address_proof_url: addressProofUrl,
+        status: 'pending',
       });
 
       if (error) throw error;
 
-      toast.toast({
-        title: 'Application Submitted',
-        description: `Your application has been submitted successfully. Your Student ID is ${studentId}`,
+      toast({
+        title: 'Application Submitted Successfully!',
+        description: `Your application has been submitted with Student ID: ${studentId}. You will receive updates via email.`,
       });
 
+      // Reset form
       setFormData({
         studentName: '',
         dateOfBirth: '',
@@ -268,7 +289,7 @@ const toast = useToast();
         currentCity: '',
         currentState: '',
         currentPincode: '',
-        sameAsPermanent: false, // ✅ This line was missing
+        sameAsPermanent: false,
         previousSchool: '',
         previousClass: '',
         previousPercentage: '',
@@ -290,7 +311,7 @@ const toast = useToast();
       setCurrentStep(1);
     } catch (error) {
       console.error('Error submitting admission form:', error);
-      toast.toast({
+      toast({
         title: 'Submission Failed',
         description: 'There was an error submitting your application. Please try again later.',
         variant: 'destructive',

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +20,10 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ContactSection from "./components/ContactSection";
 import Contact from "./pages/Contact";
+import AdminLayout from "./components/AdminLayout";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminAdmissions from "./pages/AdminAdmissions";
+import AdminUsers from "./pages/AdminUsers";
 
 const queryClient = new QueryClient();
 
@@ -44,8 +47,17 @@ const App = () => (
             <Route path="/mandatory-public-disclosure" element={<MandatoryPublicDisclosure />} />
             <Route path="/staff-details" element={<StaffDetails />} />
             <Route path="/admission-documents" element={<AdmissionDocuments />} />
-            <Route path="/admin" element={<AdminPanel />} />
             <Route path="/auth" element={<Auth />} />
+            
+            {/* Admin Routes with Sidebar Layout */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="admissions" element={<AdminAdmissions />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="fees" element={<AdminPanel />} />
+              <Route path="notices" element={<AdminPanel />} />
+            </Route>
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
