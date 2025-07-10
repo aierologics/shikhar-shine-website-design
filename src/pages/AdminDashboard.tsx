@@ -34,11 +34,10 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       
-      // Fetch admission stats
-      const { data: admissionStats, error: admissionError } = await supabase
-        .from('admission_stats')
-        .select('*')
-        .single();
+      // Fetch admission statistics directly from admissions table
+      const { data: admissions, error: admissionError } = await supabase
+        .from('admissions')
+        .select('*');
 
       if (admissionError) throw admissionError;
 
@@ -49,12 +48,26 @@ const AdminDashboard = () => {
 
       if (userError) throw userError;
 
+      // Calculate stats manually since the view might not be available
+      const totalApplications = admissions?.length || 0;
+      const pendingApplications = admissions?.filter(a => !a.status || a.status === 'pending').length || 0;
+      const approvedApplications = admissions?.filter(a => a.status === 'approved').length || 0;
+      const rejectedApplications = admissions?.filter(a => a.status === 'rejected').length || 0;
+      
+      const thisMonth = new Date();
+      thisMonth.setMonth(thisMonth.getMonth());
+      const firstDayOfMonth = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1);
+      
+      const applicationsThisMonth = admissions?.filter(a => 
+        new Date(a.created_at || '') >= firstDayOfMonth
+      ).length || 0;
+
       setStats({
-        totalApplications: admissionStats?.total_applications || 0,
-        pendingApplications: admissionStats?.pending_applications || 0,
-        approvedApplications: admissionStats?.approved_applications || 0,
-        rejectedApplications: admissionStats?.rejected_applications || 0,
-        applicationsThisMonth: admissionStats?.applications_this_month || 0,
+        totalApplications,
+        pendingApplications,
+        approvedApplications,
+        rejectedApplications,
+        applicationsThisMonth,
         totalUsers: userCount || 0,
       });
     } catch (error) {

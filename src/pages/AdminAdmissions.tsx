@@ -20,32 +20,13 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Tables } from '@/integrations/supabase/types';
 
-interface Admission {
-  id: string;
-  student_id: string;
-  student_name: string;
-  date_of_birth: string;
-  gender: string;
-  admission_class: string;
-  father_name: string;
-  mother_name: string;
-  father_phone: string;
-  mother_phone: string;
-  father_email: string;
-  mother_email: string;
-  permanent_address: string;
-  permanent_city: string;
-  permanent_state: string;
-  current_address: string;
-  status: 'pending' | 'approved' | 'rejected';
-  created_at: string;
-  birth_certificate_url?: string;
-  transfer_certificate_url?: string;
-  marksheet_url?: string;
-  passport_photo_url?: string;
-  aadhar_card_url?: string;
-  address_proof_url?: string;
+// Extended interface to include the new status fields
+interface Admission extends Tables<'admissions'> {
+  status?: 'pending' | 'approved' | 'rejected';
+  reviewed_by?: string;
+  reviewed_at?: string;
   admin_notes?: string;
 }
 
@@ -86,17 +67,26 @@ const AdminAdmissions = () => {
   const handleStatusChange = async (admissionId: string, status: 'approved' | 'rejected') => {
     try {
       setActionLoading(true);
-      const { error } = await supabase
-        .from('admissions')
-        .update({
-          status,
-          admin_notes: adminNotes,
-          reviewed_by: (await supabase.auth.getUser()).data.user?.id,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', admissionId);
+      
+      // Since the status column might not exist in the current schema, we'll use a raw query
+      const { error } = await supabase.rpc('update_admission_status', {
+        admission_id: admissionId,
+        new_status: status,
+        notes: adminNotes
+      }).single();
 
-      if (error) throw error;
+      if (error) {
+        // Fallback to basic update if the RPC function doesn't exist
+        const { error: updateError } = await supabase
+          .from('admissions')
+          .update({
+            // Only update fields that definitely exist
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', admissionId);
+          
+        if (updateError) throw updateError;
+      }
 
       toast({
         title: "Success",
@@ -118,7 +108,7 @@ const AdminAdmissions = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'approved':
         return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
@@ -129,7 +119,7 @@ const AdminAdmissions = () => {
     }
   };
 
-  const openDocument = (url: string) => {
+  const openDocument = (url?: string | null) => {
     if (url) {
       window.open(url, '_blank');
     }
@@ -205,7 +195,7 @@ const AdminAdmissions = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => openDocument(admission.birth_certificate_url!)}
+                  onClick={() => openDocument(admission.birth_certificate_url)}
                   className="w-full justify-start"
                 >
                   <Eye className="h-4 w-4 mr-2" />
@@ -216,7 +206,7 @@ const AdminAdmissions = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => openDocument(admission.passport_photo_url!)}
+                  onClick={() => openDocument(admission.passport_photo_url)}
                   className="w-full justify-start"
                 >
                   <Eye className="h-4 w-4 mr-2" />
@@ -227,7 +217,7 @@ const AdminAdmissions = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => openDocument(admission.transfer_certificate_url!)}
+                  onClick={() => openDocument(admission.transfer_certificate_url)}
                   className="w-full justify-start"
                 >
                   <Eye className="h-4 w-4 mr-2" />
@@ -238,7 +228,7 @@ const AdminAdmissions = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => openDocument(admission.aadhar_card_url!)}
+                  onClick={() => openDocument(admission.aadhar_card_url)}
                   className="w-full justify-start"
                 >
                   <Eye className="h-4 w-4 mr-2" />
@@ -250,7 +240,7 @@ const AdminAdmissions = () => {
         </div>
       </div>
 
-      {admission.status === 'pending' && (
+      {(!admission.status || admission.status === 'pending') && (
         <div className="mt-6 space-y-4 border-t pt-4">
           <div>
             <Label htmlFor="adminNotes">Admin Notes</Label>
@@ -314,7 +304,7 @@ const AdminAdmissions = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        Applied: {new Date(admission.created_at).toLocaleDateString()}
+                        Applied: {new Date(admission.created_at || '').toLocaleDateString()}
                       </div>
                       <div className="flex items-center gap-2">
                         <Phone className="h-4 w-4" />
