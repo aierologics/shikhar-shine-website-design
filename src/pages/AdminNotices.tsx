@@ -6,46 +6,39 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Megaphone, 
-  Edit, 
-  Trash2, 
-  Plus,
-  Calendar,
-  AlertTriangle,
-  Info,
-  CheckCircle
-} from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Calendar, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
+
+type NoticeType = 'holiday' | 'admission' | 'meeting' | 'event' | 'sports' | 'exam' | 'general';
+type NoticePriority = 'high' | 'medium' | 'low';
 
 interface Notice {
   id: string;
   title: string;
   content: string;
   date: string;
-  notice_type?: string;
-  priority?: string;
-  notice_number?: number;
+  notice_type: NoticeType;
+  priority: NoticePriority;
+  notice_number: number;
   created_at: string;
 }
 
 const AdminNotices = () => {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
-  const { toast } = useToast();
-
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    date: new Date().toISOString().split('T')[0],
-    notice_type: 'general',
-    priority: 'medium',
+    date: '',
+    notice_type: 'general' as NoticeType,
+    priority: 'medium' as NoticePriority,
   });
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchNotices();
@@ -57,7 +50,7 @@ const AdminNotices = () => {
       const { data, error } = await supabase
         .from('notices')
         .select('*')
-        .order('date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setNotices(data || []);
@@ -73,18 +66,11 @@ const AdminNotices = () => {
     }
   };
 
-  const handleSave = async () => {
-    if (!formData.title || !formData.content) {
-      toast({
-        title: "Error",
-        description: "Title and content are required",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       if (editingNotice) {
+        // Update existing notice
         const { error } = await supabase
           .from('notices')
           .update({
@@ -97,12 +83,9 @@ const AdminNotices = () => {
           .eq('id', editingNotice.id);
 
         if (error) throw error;
-
-        toast({
-          title: "Success",
-          description: "Notice updated successfully",
-        });
+        toast({ title: "Success", description: "Notice updated successfully" });
       } else {
+        // Create new notice
         const { error } = await supabase
           .from('notices')
           .insert({
@@ -114,13 +97,11 @@ const AdminNotices = () => {
           });
 
         if (error) throw error;
-
-        toast({
-          title: "Success",
-          description: "Notice created successfully",
-        });
+        toast({ title: "Success", description: "Notice created successfully" });
       }
 
+      setIsDialogOpen(false);
+      setEditingNotice(null);
       resetForm();
       fetchNotices();
     } catch (error) {
@@ -133,22 +114,17 @@ const AdminNotices = () => {
     }
   };
 
-  const handleDelete = async (noticeId: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this notice?')) return;
 
     try {
       const { error } = await supabase
         .from('notices')
         .delete()
-        .eq('id', noticeId);
+        .eq('id', id);
 
       if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Notice deleted successfully",
-      });
-
+      toast({ title: "Success", description: "Notice deleted successfully" });
       fetchNotices();
     } catch (error) {
       console.error('Error deleting notice:', error);
@@ -160,85 +136,59 @@ const AdminNotices = () => {
     }
   };
 
-  const startEdit = (notice: Notice) => {
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      content: '',
+      date: '',
+      notice_type: 'general',
+      priority: 'medium',
+    });
+  };
+
+  const openEditDialog = (notice: Notice) => {
     setEditingNotice(notice);
     setFormData({
       title: notice.title,
       content: notice.content,
       date: notice.date,
-      notice_type: notice.notice_type || 'general',
-      priority: notice.priority || 'medium',
+      notice_type: notice.notice_type,
+      priority: notice.priority,
     });
+    setIsDialogOpen(true);
   };
 
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      content: '',
-      date: new Date().toISOString().split('T')[0],
-      notice_type: 'general',
-      priority: 'medium',
-    });
-    setEditingNotice(null);
-  };
-
-  const getPriorityBadge = (priority?: string) => {
+  const getPriorityColor = (priority: NoticePriority) => {
     switch (priority) {
-      case 'high':
-        return <Badge className="bg-red-100 text-red-800"><AlertTriangle className="h-3 w-3 mr-1" />High</Badge>;
-      case 'low':
-        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Low</Badge>;
-      default:
-        return <Badge className="bg-yellow-100 text-yellow-800"><Info className="h-3 w-3 mr-1" />Medium</Badge>;
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getTypeBadge = (type?: string) => {
-    const typeColors = {
-      holiday: 'bg-blue-100 text-blue-800',
-      admission: 'bg-purple-100 text-purple-800',
-      meeting: 'bg-orange-100 text-orange-800',
-      event: 'bg-pink-100 text-pink-800',
-      sports: 'bg-green-100 text-green-800',
-      exam: 'bg-red-100 text-red-800',
-      general: 'bg-gray-100 text-gray-800',
-    };
-    
-    return (
-      <Badge className={typeColors[type as keyof typeof typeColors] || typeColors.general}>
-        {type?.charAt(0).toUpperCase() + type?.slice(1) || 'General'}
-      </Badge>
-    );
+  const getTypeColor = (type: NoticeType) => {
+    switch (type) {
+      case 'holiday': return 'bg-blue-100 text-blue-800';
+      case 'admission': return 'bg-purple-100 text-purple-800';
+      case 'exam': return 'bg-orange-100 text-orange-800';
+      case 'event': return 'bg-pink-100 text-pink-800';
+      case 'sports': return 'bg-teal-100 text-teal-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   if (loading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Megaphone className="h-8 w-8" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Notice Management</h1>
-              <p className="text-gray-600">Create and manage school notices</p>
-            </div>
-          </div>
-          <Skeleton className="h-10 w-32" />
+          <h1 className="text-3xl font-bold text-gray-900">Notice Management</h1>
         </div>
-
-        <div className="grid gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-                <div className="flex gap-2">
-                  <Skeleton className="h-5 w-16" />
-                  <Skeleton className="h-5 w-20" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-20 w-full" />
-              </CardContent>
-            </Card>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse">
+              <div className="bg-gray-200 h-32 rounded-lg"></div>
+            </div>
           ))}
         </div>
       </div>
@@ -248,17 +198,14 @@ const AdminNotices = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Megaphone className="h-8 w-8" />
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Notice Management</h1>
-            <p className="text-gray-600">Create and manage school notices</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Notice Management</h1>
+          <p className="text-gray-600">Create and manage school notices</p>
         </div>
-
-        <Dialog>
+        
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
+            <Button onClick={() => { resetForm(); setEditingNotice(null); }}>
               <Plus className="h-4 w-4 mr-2" />
               Add Notice
             </Button>
@@ -268,42 +215,33 @@ const AdminNotices = () => {
               <DialogTitle>{editingNotice ? 'Edit Notice' : 'Create New Notice'}</DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Notice Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Enter notice title"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="content">Notice Content</Label>
-                <Textarea
-                  id="content"
-                  value={formData.content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                  placeholder="Enter notice content"
-                  rows={6}
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
                   <Label htmlFor="date">Date</Label>
                   <Input
                     id="date"
                     type="date"
                     value={formData.date}
                     onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                    required
                   />
                 </div>
+              </div>
 
-                <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <Label htmlFor="notice_type">Type</Label>
-                  <Select value={formData.notice_type} onValueChange={(value) => setFormData(prev => ({ ...prev, notice_type: value }))}>
+                  <Select value={formData.notice_type} onValueChange={(value: NoticeType) => setFormData(prev => ({ ...prev, notice_type: value }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -311,17 +249,16 @@ const AdminNotices = () => {
                       <SelectItem value="general">General</SelectItem>
                       <SelectItem value="holiday">Holiday</SelectItem>
                       <SelectItem value="admission">Admission</SelectItem>
-                      <SelectItem value="meeting">Meeting</SelectItem>
+                      <SelectItem value="exam">Exam</SelectItem>
                       <SelectItem value="event">Event</SelectItem>
                       <SelectItem value="sports">Sports</SelectItem>
-                      <SelectItem value="exam">Exam</SelectItem>
+                      <SelectItem value="meeting">Meeting</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="priority">Priority</Label>
-                  <Select value={formData.priority} onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}>
+                  <Select value={formData.priority} onValueChange={(value: NoticePriority) => setFormData(prev => ({ ...prev, priority: value }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -334,10 +271,26 @@ const AdminNotices = () => {
                 </div>
               </div>
 
-              <Button onClick={handleSave} className="w-full">
-                {editingNotice ? 'Update Notice' : 'Create Notice'}
-              </Button>
-            </div>
+              <div>
+                <Label htmlFor="content">Content</Label>
+                <Textarea
+                  id="content"
+                  value={formData.content}
+                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                  rows={4}
+                  required
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <Button type="submit" className="flex-1">
+                  {editingNotice ? 'Update Notice' : 'Create Notice'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -346,78 +299,45 @@ const AdminNotices = () => {
         {notices.map((notice) => (
           <Card key={notice.id}>
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">{notice.title}</h3>
-                    {notice.notice_number && (
-                      <Badge variant="outline">#{notice.notice_number}</Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    {getTypeBadge(notice.notice_type)}
-                    {getPriorityBadge(notice.priority)}
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(notice.date).toLocaleDateString()}
-                    </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <CardTitle className="text-lg">{notice.title}</CardTitle>
+                  <div className="flex gap-2">
+                    <Badge className={getPriorityColor(notice.priority)}>
+                      {notice.priority}
+                    </Badge>
+                    <Badge className={getTypeColor(notice.notice_type)}>
+                      {notice.notice_type}
+                    </Badge>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => startEdit(notice)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>Edit Notice</DialogTitle>
-                      </DialogHeader>
-                      
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-title">Notice Title</Label>
-                          <Input
-                            id="edit-title"
-                            value={formData.title}
-                            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-content">Notice Content</Label>
-                          <Textarea
-                            id="edit-content"
-                            value={formData.content}
-                            onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                            rows={6}
-                          />
-                        </div>
-
-                        <Button onClick={handleSave} className="w-full">
-                          Update Notice
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEditDialog(notice)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleDelete(notice.id)}
-                    className="text-red-600 hover:text-red-700"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  {new Date(notice.date).toLocaleDateString()}
+                </div>
+                <span>Notice #{notice.notice_number}</span>
+              </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 whitespace-pre-wrap">{notice.content}</p>
+              <p className="text-gray-700">{notice.content}</p>
             </CardContent>
           </Card>
         ))}
