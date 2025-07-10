@@ -15,15 +15,12 @@ import {
 import { 
   LayoutDashboard, 
   Users, 
-  FileText, 
+  GraduationCap, 
   DollarSign, 
   Megaphone, 
   Settings,
   LogOut,
-  GraduationCap,
-  BookOpen,
-  Calendar,
-  BarChart3
+  Images
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -60,24 +57,14 @@ const AdminLayout = () => {
       icon: DollarSign,
     },
     {
-      name: 'Notice Board',
+      name: 'Notice Management',
       path: '/admin/notices',
       icon: Megaphone,
     },
     {
-      name: 'Programs',
-      path: '/admin/programs',
-      icon: BookOpen,
-    },
-    {
-      name: 'Gallery',
+      name: 'Gallery Management',
       path: '/admin/gallery',
-      icon: Calendar,
-    },
-    {
-      name: 'Reports',
-      path: '/admin/reports',
-      icon: BarChart3,
+      icon: Images,
     },
     {
       name: 'Settings',

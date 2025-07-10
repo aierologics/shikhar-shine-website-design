@@ -48,7 +48,7 @@ const AdminDashboard = () => {
 
       if (userError) throw userError;
 
-      // Calculate stats manually since the view might not be available
+      // Calculate stats manually
       const totalApplications = admissions?.length || 0;
       const pendingApplications = admissions?.filter(a => !a.status || a.status === 'pending').length || 0;
       const approvedApplications = admissions?.filter(a => a.status === 'approved').length || 0;

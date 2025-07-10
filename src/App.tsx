@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,15 +16,17 @@ import TCVerification from "./pages/TCVerification";
 import MandatoryPublicDisclosure from "./pages/MandatoryPublicDisclosure";
 import StaffDetails from "./pages/StaffDetails";
 import AdmissionDocuments from "./pages/AdmissionDocuments";
-import AdminPanel from "./pages/AdminPanel";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import ContactSection from "./components/ContactSection";
 import Contact from "./pages/Contact";
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminAdmissions from "./pages/AdminAdmissions";
 import AdminUsers from "./pages/AdminUsers";
+import AdminFees from "./pages/AdminFees";
+import AdminNotices from "./pages/AdminNotices";
+import AdminGallery from "./pages/AdminGallery";
+import AdminSettings from "./pages/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -54,8 +57,10 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="admissions" element={<AdminAdmissions />} />
               <Route path="users" element={<AdminUsers />} />
-              <Route path="fees" element={<AdminPanel />} />
-              <Route path="notices" element={<AdminPanel />} />
+              <Route path="fees" element={<AdminFees />} />
+              <Route path="notices" element={<AdminNotices />} />
+              <Route path="gallery" element={<AdminGallery />} />
+              <Route path="settings" element={<AdminSettings />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />

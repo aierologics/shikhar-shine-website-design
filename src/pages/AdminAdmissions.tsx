@@ -7,24 +7,42 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { 
-  Eye, 
+  FileText, 
+  Download, 
   Check, 
   X, 
-  Download,
+  Eye,
   Calendar,
   User,
   Phone,
   Mail,
-  MapPin,
-  GraduationCap
+  MapPin
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Tables } from '@/integrations/supabase/types';
 
-// Extended interface to include the new status fields
-interface Admission extends Tables<'admissions'> {
-  status?: 'pending' | 'approved' | 'rejected';
+interface Admission {
+  id: string;
+  student_id: string;
+  student_name: string;
+  gender: string;
+  date_of_birth: string;
+  admission_class: string;
+  father_name: string;
+  mother_name: string;
+  father_phone: string;
+  mother_phone: string;
+  father_email?: string;
+  mother_email?: string;
+  current_address: string;
+  status?: string;
+  created_at: string;
+  passport_photo_url?: string;
+  birth_certificate_url?: string;
+  aadhar_card_url?: string;
+  marksheet_url?: string;
+  transfer_certificate_url?: string;
+  address_proof_url?: string;
   reviewed_by?: string;
   reviewed_at?: string;
   admin_notes?: string;
@@ -56,7 +74,7 @@ const AdminAdmissions = () => {
       console.error('Error fetching admissions:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch admission applications",
+        description: "Failed to fetch admissions",
         variant: "destructive",
       });
     } finally {
@@ -64,33 +82,23 @@ const AdminAdmissions = () => {
     }
   };
 
-  const handleStatusChange = async (admissionId: string, status: 'approved' | 'rejected') => {
+  const handleStatusUpdate = async (admissionId: string, newStatus: 'approved' | 'rejected') => {
     try {
       setActionLoading(true);
-      
-      // Since the status column might not exist in the current schema, we'll use a raw query
-      const { error } = await supabase.rpc('update_admission_status', {
-        admission_id: admissionId,
-        new_status: status,
-        notes: adminNotes
-      }).single();
+      const { error } = await supabase
+        .from('admissions')
+        .update({
+          status: newStatus,
+          reviewed_at: new Date().toISOString(),
+          admin_notes: adminNotes || null,
+        })
+        .eq('id', admissionId);
 
-      if (error) {
-        // Fallback to basic update if the RPC function doesn't exist
-        const { error: updateError } = await supabase
-          .from('admissions')
-          .update({
-            // Only update fields that definitely exist
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', admissionId);
-          
-        if (updateError) throw updateError;
-      }
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: `Application ${status} successfully`,
+        description: `Application ${newStatus} successfully`,
       });
 
       fetchAdmissions();
@@ -100,7 +108,7 @@ const AdminAdmissions = () => {
       console.error('Error updating admission status:', error);
       toast({
         title: "Error",
-        description: "Failed to update application status",
+        description: "Failed to update admission status",
         variant: "destructive",
       });
     } finally {
@@ -119,223 +127,201 @@ const AdminAdmissions = () => {
     }
   };
 
-  const openDocument = (url?: string | null) => {
-    if (url) {
-      window.open(url, '_blank');
-    }
-  };
-
-  const AdmissionDetailsDialog = ({ admission }: { admission: Admission }) => (
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+  const DocumentViewDialog = ({ admission }: { admission: Admission }) => (
+    <DialogContent className="max-w-4xl">
       <DialogHeader>
-        <DialogTitle>Application Details - {admission.student_name}</DialogTitle>
+        <DialogTitle>Documents - {admission.student_name}</DialogTitle>
       </DialogHeader>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Student Information
-            </h3>
-            <div className="space-y-2 text-sm">
-              <p><strong>Name:</strong> {admission.student_name}</p>
-              <p><strong>Student ID:</strong> {admission.student_id}</p>
-              <p><strong>Date of Birth:</strong> {new Date(admission.date_of_birth).toLocaleDateString()}</p>
-              <p><strong>Gender:</strong> {admission.gender}</p>
-              <p><strong>Admission Class:</strong> {admission.admission_class}</p>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-              <Phone className="h-4 w-4" />
-              Parent Information
-            </h3>
-            <div className="space-y-2 text-sm">
-              <p><strong>Father:</strong> {admission.father_name}</p>
-              <p><strong>Father Phone:</strong> {admission.father_phone}</p>
-              <p><strong>Father Email:</strong> {admission.father_email}</p>
-              <p><strong>Mother:</strong> {admission.mother_name}</p>
-              <p><strong>Mother Phone:</strong> {admission.mother_phone}</p>
-              <p><strong>Mother Email:</strong> {admission.mother_email}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Address Information
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div>
-                <p><strong>Permanent Address:</strong></p>
-                <p className="text-gray-600">
-                  {admission.permanent_address}, {admission.permanent_city}, {admission.permanent_state}
-                </p>
+      <div className="grid grid-cols-2 gap-4">
+        {[
+          { label: 'Passport Photo', url: admission.passport_photo_url },
+          { label: 'Birth Certificate', url: admission.birth_certificate_url },
+          { label: 'Aadhar Card', url: admission.aadhar_card_url },
+          { label: 'Previous Marksheet', url: admission.marksheet_url },
+          { label: 'Transfer Certificate', url: admission.transfer_certificate_url },
+          { label: 'Address Proof', url: admission.address_proof_url },
+        ].map((doc) => (
+          <div key={doc.label} className="border rounded-lg p-4">
+            <h4 className="font-medium mb-2">{doc.label}</h4>
+            {doc.url ? (
+              <div className="space-y-2">
+                <img 
+                  src={doc.url} 
+                  alt={doc.label}
+                  className="w-full h-32 object-cover rounded"
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open(doc.url, '_blank')}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
               </div>
-              <div>
-                <p><strong>Current Address:</strong></p>
-                <p className="text-gray-600">
-                  {admission.current_address}
-                </p>
-              </div>
-            </div>
+            ) : (
+              <p className="text-gray-500">Not uploaded</p>
+            )}
           </div>
-
-          <div>
-            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Documents
-            </h3>
-            <div className="space-y-2">
-              {admission.birth_certificate_url && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => openDocument(admission.birth_certificate_url)}
-                  className="w-full justify-start"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Birth Certificate
-                </Button>
-              )}
-              {admission.passport_photo_url && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => openDocument(admission.passport_photo_url)}
-                  className="w-full justify-start"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Passport Photo
-                </Button>
-              )}
-              {admission.transfer_certificate_url && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => openDocument(admission.transfer_certificate_url)}
-                  className="w-full justify-start"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Transfer Certificate
-                </Button>
-              )}
-              {admission.aadhar_card_url && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => openDocument(admission.aadhar_card_url)}
-                  className="w-full justify-start"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Aadhar Card
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
-
-      {(!admission.status || admission.status === 'pending') && (
-        <div className="mt-6 space-y-4 border-t pt-4">
-          <div>
-            <Label htmlFor="adminNotes">Admin Notes</Label>
-            <Textarea
-              id="adminNotes"
-              value={adminNotes}
-              onChange={(e) => setAdminNotes(e.target.value)}
-              placeholder="Add notes about this application..."
-              className="mt-1"
-            />
-          </div>
-          
-          <div className="flex gap-4">
-            <Button
-              onClick={() => handleStatusChange(admission.id, 'approved')}
-              disabled={actionLoading}
-              className="bg-green-600 hover:bg-green-700 flex-1"
-            >
-              <Check className="h-4 w-4 mr-2" />
-              Approve Application
-            </Button>
-            <Button
-              onClick={() => handleStatusChange(admission.id, 'rejected')}
-              disabled={actionLoading}
-              variant="destructive"
-              className="flex-1"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Reject Application
-            </Button>
-          </div>
-        </div>
-      )}
     </DialogContent>
   );
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Admission Applications</h1>
-        <p className="text-gray-600">Manage and review student admission applications</p>
-      </div>
+  const AdminActionDialog = ({ admission }: { admission: Admission }) => (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Review Application - {admission.student_name}</DialogTitle>
+      </DialogHeader>
+      
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="adminNotes">Admin Notes (Optional)</Label>
+          <Textarea
+            id="adminNotes"
+            value={adminNotes}
+            onChange={(e) => setAdminNotes(e.target.value)}
+            placeholder="Add any notes about this application..."
+            className="mt-1"
+          />
+        </div>
 
-      {loading ? (
-        <div className="text-center py-8">Loading applications...</div>
-      ) : (
-        <div className="grid gap-4">
-          {admissions.map((admission) => (
-            <Card key={admission.id}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-2">
-                      <h3 className="font-semibold text-lg">{admission.student_name}</h3>
-                      {getStatusBadge(admission.status)}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4" />
-                        Class: {admission.admission_class}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Applied: {new Date(admission.created_at || '').toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        {admission.father_phone}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedAdmission(admission);
-                          setAdminNotes(admission.admin_notes || '');
-                        }}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button>
-                    </DialogTrigger>
-                    {selectedAdmission && (
-                      <AdmissionDetailsDialog admission={selectedAdmission} />
-                    )}
-                  </Dialog>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="flex gap-4">
+          <Button
+            onClick={() => handleStatusUpdate(admission.id, 'approved')}
+            disabled={actionLoading}
+            className="flex-1 bg-green-600 hover:bg-green-700"
+          >
+            <Check className="h-4 w-4 mr-2" />
+            {actionLoading ? 'Processing...' : 'Approve'}
+          </Button>
+          <Button
+            onClick={() => handleStatusUpdate(admission.id, 'rejected')}
+            disabled={actionLoading}
+            variant="destructive"
+            className="flex-1"
+          >
+            <X className="h-4 w-4 mr-2" />
+            {actionLoading ? 'Processing...' : 'Reject'}
+          </Button>
+        </div>
+      </div>
+    </DialogContent>
+  );
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Admission Management</h1>
+            <p className="text-gray-600">Review and manage student applications</p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse">
+              <div className="bg-gray-200 h-32 rounded-lg"></div>
+            </div>
           ))}
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Admission Management</h1>
+          <p className="text-gray-600">Review and manage student applications</p>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-600">
+            Total Applications: {admissions.length}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4">
+        {admissions.map((admission) => (
+          <Card key={admission.id}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-school-blue rounded-full flex items-center justify-center text-white font-bold">
+                      {admission.student_name[0]}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">{admission.student_name}</h3>
+                      <p className="text-gray-600">ID: {admission.student_id}</p>
+                    </div>
+                    {getStatusBadge(admission.status)}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Class: {admission.admission_class}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      DOB: {new Date(admission.date_of_birth).toLocaleDateString()}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      {admission.father_phone}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      {admission.father_email || 'No email'}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      {admission.current_address.substring(0, 50)}...
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Applied: {new Date(admission.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Documents
+                      </Button>
+                    </DialogTrigger>
+                    <DocumentViewDialog admission={admission} />
+                  </Dialog>
+                  
+                  {admission.status !== 'approved' && admission.status !== 'rejected' && (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          onClick={() => setSelectedAdmission(admission)}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Review
+                        </Button>
+                      </DialogTrigger>
+                      {selectedAdmission && (
+                        <AdminActionDialog admission={selectedAdmission} />
+                      )}
+                    </Dialog>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
