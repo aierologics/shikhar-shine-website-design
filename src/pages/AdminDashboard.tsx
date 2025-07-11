@@ -1,30 +1,30 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Users, 
-  GraduationCap, 
-  FileCheck, 
-  DollarSign,
-  TrendingUp,
-  Calendar
-} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { Users, GraduationCap, UserCheck, DollarSign } from 'lucide-react';
 
 interface DashboardStats {
-  totalApplications: number;
-  pendingApplications: number;
-  approvedApplications: number;
-  rejectedApplications: number;
-  applicationsThisMonth: number;
-  totalUsers: number;
+  totalStudents: number;
+  totalTeachers: number;
+  totalAdmissions: number;
+  pendingAdmissions: number;
+  approvedAdmissions: number;
+  rejectedAdmissions: number;
+  totalFees: number;
 }
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalAdmissions: 0,
+    pendingAdmissions: 0,
+    approvedAdmissions: 0,
+    rejectedAdmissions: 0,
+    totalFees: 0,
+  });
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchDashboardStats();
@@ -32,142 +32,126 @@ const AdminDashboard = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      setLoading(true);
-      
-      // Fetch admission statistics directly from admissions table
-      const { data: admissions, error: admissionError } = await supabase
-        .from('admissions')
-        .select('*');
-
-      if (admissionError) throw admissionError;
-
-      // Fetch total users count
-      const { count: userCount, error: userError } = await supabase
-        .from('profiles')
+      // Fetch students count
+      const { count: studentsCount } = await supabase
+        .from('students')
         .select('*', { count: 'exact', head: true });
 
-      if (userError) throw userError;
+      // Fetch teachers count
+      const { count: teachersCount } = await supabase
+        .from('teachers')
+        .select('*', { count: 'exact', head: true });
 
-      // Calculate stats manually
-      const totalApplications = admissions?.length || 0;
-      const pendingApplications = admissions?.filter(a => !a.status || a.status === 'pending').length || 0;
-      const approvedApplications = admissions?.filter(a => a.status === 'approved').length || 0;
-      const rejectedApplications = admissions?.filter(a => a.status === 'rejected').length || 0;
+      // Fetch admissions data
+      const { data: admissionsData, count: admissionsCount } = await supabase
+        .from('admissions')
+        .select('status', { count: 'exact' });
+
+      // Calculate admission status counts
+      const pendingCount = admissionsData?.filter(a => a.status === 'pending' || !a.status).length || 0;
+      const approvedCount = admissionsData?.filter(a => a.status === 'approved').length || 0;
+      const rejectedCount = admissionsData?.filter(a => a.status === 'rejected').length || 0;
+
+      // Fetch fee deposits total
+      const { data: feeData } = await supabase
+        .from('fee_deposits')
+        .select('amount');
       
-      const thisMonth = new Date();
-      thisMonth.setMonth(thisMonth.getMonth());
-      const firstDayOfMonth = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1);
-      
-      const applicationsThisMonth = admissions?.filter(a => 
-        new Date(a.created_at || '') >= firstDayOfMonth
-      ).length || 0;
+      const totalFees = feeData?.reduce((sum, fee) => sum + Number(fee.amount), 0) || 0;
 
       setStats({
-        totalApplications,
-        pendingApplications,
-        approvedApplications,
-        rejectedApplications,
-        applicationsThisMonth,
-        totalUsers: userCount || 0,
+        totalStudents: studentsCount || 0,
+        totalTeachers: teachersCount || 0,
+        totalAdmissions: admissionsCount || 0,
+        pendingAdmissions: pendingCount,
+        approvedAdmissions: approvedCount,
+        rejectedAdmissions: rejectedCount,
+        totalFees,
       });
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch dashboard statistics",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const StatCard = ({ title, value, icon: Icon, color }: {
-    title: string;
-    value: number;
-    icon: any;
-    color: string;
-  }) => (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className={`h-4 w-4 ${color}`} />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{loading ? '...' : value}</div>
-      </CardContent>
-    </Card>
-  );
+  if (loading) {
+    return <div className="text-center py-8">Loading dashboard...</div>;
+  }
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Welcome to the school management system</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Applications"
-          value={stats?.totalApplications || 0}
-          icon={GraduationCap}
-          color="text-blue-600"
-        />
-        <StatCard
-          title="Pending Review"
-          value={stats?.pendingApplications || 0}
-          icon={FileCheck}
-          color="text-yellow-600"
-        />
-        <StatCard
-          title="Approved"
-          value={stats?.approvedApplications || 0}
-          icon={TrendingUp}
-          color="text-green-600"
-        />
-        <StatCard
-          title="Total Users"
-          value={stats?.totalUsers || 0}
-          icon={Users}
-          color="text-purple-600"
-        />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              This Month's Applications
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-school-blue">
-              {loading ? '...' : stats?.applicationsThisMonth || 0}
-            </div>
-            <p className="text-sm text-gray-600 mt-2">
-              New applications received this month
-            </p>
+            <div className="text-2xl font-bold">{stats.totalStudents}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalTeachers}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Admissions</CardTitle>
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalAdmissions}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Fee Collection</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹{stats.totalFees.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium text-yellow-600">Pending Admissions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-yellow-600">{stats.pendingAdmissions}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Quick Actions
-            </CardTitle>
+            <CardTitle className="text-lg font-medium text-green-600">Approved Admissions</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <button className="w-full text-left p-2 hover:bg-gray-100 rounded-md text-sm">
-              Review Pending Applications
-            </button>
-            <button className="w-full text-left p-2 hover:bg-gray-100 rounded-md text-sm">
-              Manage User Accounts
-            </button>
-            <button className="w-full text-left p-2 hover:bg-gray-100 rounded-md text-sm">
-              Update Fee Structure
-            </button>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">{stats.approvedAdmissions}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium text-red-600">Rejected Admissions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-red-600">{stats.rejectedAdmissions}</div>
           </CardContent>
         </Card>
       </div>

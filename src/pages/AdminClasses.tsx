@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -179,6 +178,13 @@ const AdminClasses = () => {
     }
   };
 
+  const handleAddClass = () => {
+    console.log('Add Class button clicked');
+    resetForm();
+    setEditingClass(null);
+    setIsDialogOpen(true);
+  };
+
   const resetForm = () => {
     setFormData({
       class_name: '',
@@ -200,9 +206,12 @@ const AdminClasses = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Classes & Sections Management</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          console.log('Dialog state changed:', open);
+          setIsDialogOpen(open);
+        }}>
           <DialogTrigger asChild>
-            <Button onClick={() => { resetForm(); setEditingClass(null); }}>
+            <Button onClick={handleAddClass}>
               <Plus className="h-4 w-4 mr-2" />
               Add Class
             </Button>

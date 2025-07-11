@@ -21,7 +21,6 @@ import AdminNotices from "./pages/AdminNotices";
 import AdminGallery from "./pages/AdminGallery";
 import AdminSettings from "./pages/AdminSettings";
 import FeeDetails from "./pages/FeeDetails";
-import { Contact } from "lucide-react";
 import About from "./pages/About";
 import AdmissionDocuments from "./pages/AdmissionDocuments";
 import Admissions from "./pages/Admissions";
