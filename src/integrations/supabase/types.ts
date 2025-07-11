@@ -68,7 +68,8 @@ export type Database = {
           student_name: string
           transfer_certificate_url: string | null
           transport_required: boolean | null
-          updated_at: string | null
+          updated_at: string | null,
+          status: string | null,
         }
         Insert: {
           aadhar_card_url?: string | null
@@ -220,6 +221,72 @@ export type Database = {
           old_fee?: string | null
           security_fees?: string
           total_fees?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      },
+      teachers: {
+        Row: {
+          id: string
+          teacher_id: string
+          first_name: string
+          last_name: string
+          email: string
+          phone: string
+          date_of_birth: string | null
+          address: string | null
+          qualification: string | null
+          experience_years: number | null
+          subjects: string[] | null
+          joining_date: string
+          salary: number | null
+          status: string | null
+          photo_url: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          teacher_id: string
+          first_name: string
+          last_name: string
+          email: string
+          phone: string
+          date_of_birth?: string | null
+          address?: string | null
+          qualification?: string | null
+          experience_years?: number | null
+          subjects?: string[] | null
+          joining_date: string
+          salary?: number | null
+          status?: string | null
+          photo_url?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          teacher_id?: string
+          first_name?: string
+          last_name?: string
+          email?: string
+          phone?: string
+          date_of_birth?: string | null
+          address?: string | null
+          qualification?: string | null
+          experience_years?: number | null
+          subjects?: string[] | null
+          joining_date?: string
+          salary?: number | null
+          status?: string | null
+          photo_url?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          created_at?: string | null
           updated_at?: string | null
         }
         Relationships: []

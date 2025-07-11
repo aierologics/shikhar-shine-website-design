@@ -33,6 +33,7 @@ const AdminLayout = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+    localStorage.clear();
   };
 
   const menuItems = [
@@ -60,6 +61,11 @@ const AdminLayout = () => {
       name: 'Notice Management',
       path: '/admin/notices',
       icon: Megaphone,
+    },
+     {
+      name: 'Teacher Management',
+      path: '/admin/teacher-management',
+      icon: Users,
     },
     {
       name: 'Gallery Management',

@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -36,7 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
           // Check if user is admin
           try {
@@ -45,7 +46,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               .select('role')
               .eq('id', session.user.id)
               .single();
-            
+
             setIsAdmin(profile?.role === 'admin');
           } catch (error) {
             console.error('Error checking admin status:', error);
@@ -60,23 +61,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Get initial session and restore user state manually
     const restoreSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setSession(session);
-        setUser(session.user);
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-          setIsAdmin(profile?.role === 'admin');
-        } catch (error) {
-          console.error('Error checking admin status:', error);
-          setIsAdmin(false);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setSession(session);
+          setUser(session.user);
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+            setIsAdmin(profile?.role === 'admin');
+          } catch (error) {
+            console.error('Error checking admin status:', error);
+            setIsAdmin(false);
+          }
         }
+      } catch (err) {
+        console.error('Error restoring session:', err);
+        setSession(null);
+        setUser(null);
+        setIsAdmin(false);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     restoreSession();
@@ -97,7 +106,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string, fullName?: string) => {
     console.log('Attempting to sign up with:', email);
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -112,10 +121,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
-  const signOut = async () => {
-    console.log('Signing out');
-    await supabase.auth.signOut();
-  };
+const signOut = async () => {
+  console.log('Signing out');
+  
+  // Sign out from Supabase
+  const { error } = await supabase.auth.signOut();
+  
+  if (error) {
+    console.error('Error during sign out:', error.message);
+  }
+
+  // Clear ALL localStorage items (not just Supabase)
+  localStorage.clear();
+
+  // Reset local state
+  setUser(null);
+  setSession(null);
+  setIsAdmin(false);
+
+  // Redirect to home page (or login)
+  window.location.href = '/';
+};
 
   const value = {
     user,

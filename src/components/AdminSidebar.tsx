@@ -35,6 +35,11 @@ const AdminSidebar = () => {
       path: '/admin#notices',
       icon: <Megaphone className="size-4" />,
     },
+    {
+      name: 'Teacher Management',
+      path: '/admin/teacher-management',
+      icon: <Megaphone className="size-4" />,
+    },
   ];
 
   return (

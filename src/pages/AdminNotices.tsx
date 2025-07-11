@@ -11,9 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Calendar, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSupabaseSession } from '@/hooks/useSupabaseSession';
 
 type NoticeType = 'holiday' | 'admission' | 'meeting' | 'event' | 'sports' | 'exam' | 'general';
 type NoticePriority = 'high' | 'medium' | 'low';
+
 
 interface Notice {
   id: string;
@@ -27,8 +29,19 @@ interface Notice {
 }
 
 const AdminNotices = () => {
+
+  const { user, userLoading } = useSupabaseSession();
+  useEffect(() => {
+    if (!userLoading && !user) {
+      // maybe redirect to login or show a message
+      console.warn('No active session found');
+    }
+  }, [user, userLoading]);
+
+  const [noticeToDelete, setNoticeToDelete] = useState<Notice | null>(null);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
   const [formData, setFormData] = useState({
@@ -68,10 +81,17 @@ const AdminNotices = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
     try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData?.user?.id) {
+        throw new Error("User not authenticated.");
+      }
+
+      const createdBy = userData.user.id;
+
       if (editingNotice) {
-        // Update existing notice
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('notices')
           .update({
             title: formData.title,
@@ -80,13 +100,14 @@ const AdminNotices = () => {
             notice_type: formData.notice_type,
             priority: formData.priority,
           })
-          .eq('id', editingNotice.id);
+          .eq('id', editingNotice.id)
+          .select();
 
         if (error) throw error;
+
         toast({ title: "Success", description: "Notice updated successfully" });
       } else {
-        // Create new notice
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('notices')
           .insert({
             title: formData.title,
@@ -94,29 +115,34 @@ const AdminNotices = () => {
             date: formData.date,
             notice_type: formData.notice_type,
             priority: formData.priority,
-          });
+            created_by: createdBy, // ✅ UUID from session
+            notice_number: Math.floor(1000 + Math.random() * 9000),
+          })
+          .select();
 
         if (error) throw error;
+
         toast({ title: "Success", description: "Notice created successfully" });
       }
 
-      setIsDialogOpen(false);
-      setEditingNotice(null);
       resetForm();
+      setEditingNotice(null);
+      setIsDialogOpen(false);
       fetchNotices();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving notice:', error);
+
       toast({
         title: "Error",
-        description: "Failed to save notice",
+        description: error.message || "Something went wrong",
         variant: "destructive",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this notice?')) return;
-
     try {
       const { error } = await supabase
         .from('notices')
@@ -196,13 +222,44 @@ const AdminNotices = () => {
   }
 
   return (
+
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Notice Management</h1>
           <p className="text-gray-600">Create and manage school notices</p>
         </div>
-        
+        <Dialog open={!!noticeToDelete} onOpenChange={() => setNoticeToDelete(null)}>
+          <DialogContent className="max-w-md text-center">
+            <DialogHeader>
+              <DialogTitle className="text-red-600">Delete Notice?</DialogTitle>
+            </DialogHeader>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete{' '}
+              <strong>{noticeToDelete?.title}</strong>? This action cannot be undone.
+            </p>
+            <div className="flex justify-center gap-4">
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (noticeToDelete) {
+                    handleDelete(noticeToDelete.id);
+                    setNoticeToDelete(null);
+                  }
+                }}
+              >
+                Yes, Delete
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setNoticeToDelete(null)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => { resetForm(); setEditingNotice(null); }}>
@@ -214,7 +271,7 @@ const AdminNotices = () => {
             <DialogHeader>
               <DialogTitle>{editingNotice ? 'Edit Notice' : 'Create New Notice'}</DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -283,10 +340,10 @@ const AdminNotices = () => {
               </div>
 
               <div className="flex gap-4">
-                <Button type="submit" className="flex-1">
-                  {editingNotice ? 'Update Notice' : 'Create Notice'}
+                <Button type="submit" className="flex-1" disabled={saving}>
+                  {saving ? 'Saving...' : editingNotice ? 'Update Notice' : 'Create Notice'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={saving}>
                   Cancel
                 </Button>
               </div>
@@ -322,7 +379,7 @@ const AdminNotices = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDelete(notice.id)}
+                    onClick={() => setNoticeToDelete(notice)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

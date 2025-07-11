@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
-  DollarSign, 
   Edit, 
   Trash2, 
   Plus,
@@ -206,7 +205,6 @@ const AdminFees = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-8 w-8" />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Fee Management</h1>
               <p className="text-gray-600">Manage school fee structures</p>
@@ -240,7 +238,6 @@ const AdminFees = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <DollarSign className="h-8 w-8" />
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Fee Management</h1>
             <p className="text-gray-600">Manage school fee structures</p>
