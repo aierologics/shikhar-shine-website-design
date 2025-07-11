@@ -27,8 +27,10 @@ import AdminFees from "./pages/AdminFees";
 import AdminNotices from "./pages/AdminNotices";
 import AdminGallery from "./pages/AdminGallery";
 import AdminSettings from "./pages/AdminSettings";
-import TeacherManagement from "./pages/admin/TeacherManagement";
-import AddTeacher from "./pages/admin/AddTeacher";
+import AdminStudents from "./pages/AdminStudents";
+import AdminTeachers from "./pages/AdminTeachers";
+import AdminClasses from "./pages/AdminClasses";
+import AdminFeeDeposits from "./pages/AdminFeeDeposits";
 
 const queryClient = new QueryClient();
 
@@ -58,13 +60,15 @@ const App = () => (
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="admissions" element={<AdminAdmissions />} />
+              <Route path="students" element={<AdminStudents />} />
+              <Route path="teachers" element={<AdminTeachers />} />
+              <Route path="classes" element={<AdminClasses />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="fees" element={<AdminFees />} />
+              <Route path="fee-deposits" element={<AdminFeeDeposits />} />
               <Route path="notices" element={<AdminNotices />} />
               <Route path="gallery" element={<AdminGallery />} />
               <Route path="settings" element={<AdminSettings />} />
-              <Route path="teacher-management" element={<TeacherManagement/>}/>
-              <Route path="add-teacher" element={<AddTeacher/>}/>
             </Route>
             
             <Route path="*" element={<NotFound />} />

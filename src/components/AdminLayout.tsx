@@ -20,7 +20,15 @@ import {
   Megaphone, 
   Settings,
   LogOut,
-  Images
+  Images,
+  Building,
+  Bus,
+  Package,
+  ClipboardList,
+  BookOpen,
+  Calendar,
+  UserCheck,
+  Calculator
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -48,9 +56,24 @@ const AdminLayout = () => {
       icon: GraduationCap,
     },
     {
-      name: 'User Management',
-      path: '/admin/users',
+      name: 'Student Management',
+      path: '/admin/students',
       icon: Users,
+    },
+    {
+      name: 'Teacher Management',
+      path: '/admin/teachers',
+      icon: UserCheck,
+    },
+    {
+      name: 'Classes & Sections',
+      path: '/admin/classes',
+      icon: BookOpen,
+    },
+    {
+      name: 'Timetable',
+      path: '/admin/timetable',
+      icon: Calendar,
     },
     {
       name: 'Fee Management',
@@ -58,14 +81,39 @@ const AdminLayout = () => {
       icon: DollarSign,
     },
     {
+      name: 'Fee Deposits',
+      path: '/admin/fee-deposits',
+      icon: Calculator,
+    },
+    {
+      name: 'Hostel Management',
+      path: '/admin/hostels',
+      icon: Building,
+    },
+    {
+      name: 'Transport & Routes',
+      path: '/admin/transport',
+      icon: Bus,
+    },
+    {
+      name: 'Inventory',
+      path: '/admin/inventory',
+      icon: Package,
+    },
+    {
+      name: 'Visitor Logs',
+      path: '/admin/visitors',
+      icon: ClipboardList,
+    },
+    {
+      name: 'Exams & Results',
+      path: '/admin/exams',
+      icon: BookOpen,
+    },
+    {
       name: 'Notice Management',
       path: '/admin/notices',
       icon: Megaphone,
-    },
-     {
-      name: 'Teacher Management',
-      path: '/admin/teacher-management',
-      icon: Users,
     },
     {
       name: 'Gallery Management',
