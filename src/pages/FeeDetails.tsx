@@ -6,7 +6,9 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/integrations/supabase/types';
 
 interface FeeStructure {
   id: string;
@@ -38,9 +40,11 @@ const FeeDetails = () => {
 
       if (error) {
         console.error('Error fetching fee data:', error);
+        setFeeData([]);
       } else {
-        setFeeData(data || []);
+        setFeeData((data as FeeStructure[]) || []);
       }
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching fee data:', error);
     } finally {

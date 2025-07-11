@@ -41,11 +41,12 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
@@ -61,7 +62,7 @@ const App = () => (
             <Route path="/admission-documents" element={<AdmissionDocuments />} />
             <Route path="/auth" element={<Auth />} />
             {/* Admin Routes */}
-            <Route path="/admin" element={<ProtectedRoute />}>
+            <Route path="/admin">
               <Route element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="admissions" element={<AdminAdmissions />} />
@@ -82,9 +83,10 @@ const App = () => (
               </Route>
             </Route>
           </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+
   </QueryClientProvider>
 );
 

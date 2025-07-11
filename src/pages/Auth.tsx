@@ -25,6 +25,23 @@ const Auth = () => {
 
     console.log('Form submitted:', { isLogin, email, password: '***' });
 
+    // Add a timeout to prevent infinite loading
+    const TIMEOUT = 10000;
+    let timeoutId: NodeJS.Timeout | null = null;
+    const clearLoading = () => {
+      setLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+
+    timeoutId = setTimeout(() => {
+      toast({
+        title: "Error",
+        description: "Request timed out. Please try again.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }, TIMEOUT);
+
     try {
       if (isLogin) {
         console.log('Attempting login...');
@@ -70,7 +87,7 @@ const Auth = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      clearLoading();
     }
   };
 

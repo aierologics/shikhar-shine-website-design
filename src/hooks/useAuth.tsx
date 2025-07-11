@@ -32,20 +32,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let unsubscribed = false;
 
-    const tokenKey = 'sb-ditxulobyakqthrmgpps-auth-token';
-    const hasStoredSession = !!localStorage.getItem(tokenKey);
-
     const restoreSession = async () => {
-      if (!hasStoredSession) {
-        console.log('No Supabase token found. Skipping restore.');
-        setLoading(false);
-        return;
-      }
-
       try {
         const { data: { session } } = await supabase.auth.getSession();
 
-        if (session?.user) {
+        if (session && session.user) {
           setUser(session.user);
           setSession(session);
 
@@ -62,13 +53,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setIsAdmin(false);
         }
       } catch (error) {
-        console.error('Failed to restore session:', error);
         setUser(null);
         setSession(null);
         setIsAdmin(false);
-      } finally {
-        setLoading(false);
       }
+      setLoading(false); // <-- Only here!
     };
 
     restoreSession();
@@ -90,14 +79,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             setIsAdmin(profile?.role === 'admin');
           } catch (err) {
-            console.error('Error checking admin role:', err);
             setIsAdmin(false);
           }
         } else {
           setIsAdmin(false);
         }
 
-        setLoading(false);
+        // REMOVE setLoading(false) from here!
       }
     );
 

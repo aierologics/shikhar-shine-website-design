@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
@@ -32,11 +32,34 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
+
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      try {
+        // Example API call: fetch count of students as a sample
+        const { count: studentsCount, error: studentsError } = await supabase
+          .from('students')
+          .select('*', { count: 'exact', head: true });
+
+        if (studentsError) throw studentsError;
+
+        // You can add more API calls here as needed
+
+        // For now, just log the count
+        console.log('Students count:', studentsCount);
+      } catch (err) {
+        console.error('Error fetching admin data:', err);
+      }
+    };
+
+    fetchAdminData();
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();

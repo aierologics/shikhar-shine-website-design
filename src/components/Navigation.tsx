@@ -3,7 +3,6 @@ import { Menu, X, User, LogOut, ChevronDown } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -85,7 +84,7 @@ const Navigation = () => {
       </div>
 
       {/* Main Nav (pushed below top nav height) */}
-      <nav className="bg-white shadow-lg w-full top-[40px] z-40">
+      <nav className="bg-white shadow-lg w-full z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Logo & School Info */}
@@ -98,7 +97,7 @@ const Navigation = () => {
                 />
                 <div>
                   <div className="text-xl font-bold text-school-blue leading-snug">
-                    Shikhar Shishu Sadan
+                    Shikhar Shishu Sadan Sr. Sec. School
                   </div>
                   <div className="text-xs text-gray-600">
                     Affiliated to C.B.S.E New Delhi
@@ -131,7 +130,7 @@ const Navigation = () => {
                               key={sub.name}
                               to={sub.path}
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-school-lightBlue hover:text-school-blue"
-                              onClick={() => setIsOfficialOpen(false)} // optional: auto-close on link click
+                              onClick={() => setIsOfficialOpen(false)}
                             >
                               {sub.name}
                             </Link>
@@ -152,7 +151,6 @@ const Navigation = () => {
                     </Link>
                   )
                 )}
-
               </div>
             </div>
 
@@ -189,7 +187,7 @@ const Navigation = () => {
             </div>
           </div>
         )}
-      </nav>
+      </nav >
     </>
   );
 };

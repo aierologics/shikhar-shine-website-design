@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,59 +23,85 @@ const AdminDashboard = () => {
     rejectedAdmissions: 0,
     totalFees: 0,
   });
+
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        // Students count
+        const { count: studentsCount, error: studentsError } = await supabase
+          .from('students')
+          .select('*', { count: 'exact', head: true });
+        if (studentsError) throw studentsError;
+
+        // Teachers count
+        const { count: teachersCount, error: teachersError } = await supabase
+          .from('teachers')
+          .select('*', { count: 'exact', head: true });
+        if (teachersError) throw teachersError;
+
+        // Admissions
+        const { data: admissionsData, error: admissionsDataError } = await supabase
+          .from('admissions')
+          .select('status');
+        if (admissionsDataError) throw admissionsDataError;
+
+        const { count: admissionsCount, error: admissionsCountError } = await supabase
+          .from('admissions')
+          .select('*', { count: 'exact', head: true });
+        if (admissionsCountError) throw admissionsCountError;
+
+        const pendingCount = admissionsData?.filter(a => a.status === 'pending' || !a.status).length ?? 0;
+        const approvedCount = admissionsData?.filter(a => a.status === 'approved').length ?? 0;
+        const rejectedCount = admissionsData?.filter(a => a.status === 'rejected').length ?? 0;
+
+        // Fees
+        const { data: feeData, error: feeError } = await supabase
+          .from('fee_deposits')
+          .select('amount');
+        if (feeError) throw feeError;
+
+        const totalFees = feeData?.reduce((sum, fee) => sum + Number(fee.amount ?? 0), 0) ?? 0;
+
+        setStats({
+          totalStudents: studentsCount || 0,
+          totalTeachers: teachersCount || 0,
+          totalAdmissions: admissionsCount || 0,
+          pendingAdmissions: pendingCount,
+          approvedAdmissions: approvedCount,
+          rejectedAdmissions: rejectedCount,
+          totalFees,
+        });
+
+        setError(null);
+      } catch (err: any) {
+        console.error('Error fetching dashboard stats:', err);
+        setError('Failed to fetch dashboard data.');
+        setStats({
+          totalStudents: 0,
+          totalTeachers: 0,
+          totalAdmissions: 0,
+          pendingAdmissions: 0,
+          approvedAdmissions: 0,
+          rejectedAdmissions: 0,
+          totalFees: 0,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchDashboardStats();
   }, []);
 
-  const fetchDashboardStats = async () => {
-    try {
-      // Fetch students count
-      const { count: studentsCount } = await supabase
-        .from('students')
-        .select('*', { count: 'exact', head: true });
-
-      // Fetch teachers count
-      const { count: teachersCount } = await supabase
-        .from('teachers')
-        .select('*', { count: 'exact', head: true });
-
-      // Fetch admissions data
-      const { data: admissionsData, count: admissionsCount } = await supabase
-        .from('admissions')
-        .select('status', { count: 'exact' });
-
-      // Calculate admission status counts
-      const pendingCount = admissionsData?.filter(a => a.status === 'pending' || !a.status).length || 0;
-      const approvedCount = admissionsData?.filter(a => a.status === 'approved').length || 0;
-      const rejectedCount = admissionsData?.filter(a => a.status === 'rejected').length || 0;
-
-      // Fetch fee deposits total
-      const { data: feeData } = await supabase
-        .from('fee_deposits')
-        .select('amount');
-      
-      const totalFees = feeData?.reduce((sum, fee) => sum + Number(fee.amount), 0) || 0;
-
-      setStats({
-        totalStudents: studentsCount || 0,
-        totalTeachers: teachersCount || 0,
-        totalAdmissions: admissionsCount || 0,
-        pendingAdmissions: pendingCount,
-        approvedAdmissions: approvedCount,
-        rejectedAdmissions: rejectedCount,
-        totalFees,
-      });
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (loading) {
-    return <div className="text-center py-8">Loading dashboard...</div>;
+    return <div className="text-center py-10 text-lg">Loading dashboard...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center text-red-600 py-10">{error}</div>;
   }
 
   return (

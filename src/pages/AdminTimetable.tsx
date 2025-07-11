@@ -44,7 +44,7 @@ const AdminTimetable = () => {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
-  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedClass, setSelectedClass] = useState('__all__');
   const { toast } = useToast();
 
   const PLACEHOLDER_VALUE = "__placeholder__";
@@ -238,7 +238,7 @@ const AdminTimetable = () => {
     setIsDialogOpen(true);
   };
 
-  const filteredTimetable = selectedClass
+  const filteredTimetable = selectedClass && selectedClass !== '__all__'
     ? timetable.filter(entry => entry.class_id === selectedClass)
     : timetable;
 
@@ -481,7 +481,7 @@ const AdminTimetable = () => {
                 <SelectValue placeholder="Select class to view timetable" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Classes</SelectItem>
+                <SelectItem value="__all__">All Classes</SelectItem>
                 {classes.map((cls) => (
                   <SelectItem key={cls.id} value={cls.id}>
                     {cls.class_name} - {cls.section}
@@ -504,7 +504,7 @@ const AdminTimetable = () => {
         </CardContent>
       </Card>
 
-      {!selectedClass && (
+      {selectedClass === '__all__' && (
         <Card>
           <CardHeader>
             <CardTitle>All Timetable Entries</CardTitle>
