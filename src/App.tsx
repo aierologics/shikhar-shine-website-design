@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminStudents from "./pages/AdminStudents";
@@ -39,12 +40,13 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-         <Route path="/" element={<Index />} />
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<ContactSection />} />
             <Route path="/programs" element={<Programs />} />
@@ -57,28 +59,29 @@ const App = () => (
             <Route path="/staff-details" element={<StaffDetails />} />
             <Route path="/admission-documents" element={<AdmissionDocuments />} />
             <Route path="/auth" element={<Auth />} />
-          {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="admissions" element={<AdminAdmissions />} />
-            <Route path="students" element={<AdminStudents />} />
-            <Route path="teachers" element={<AdminTeachers />} />
-            <Route path="classes" element={<AdminClasses />} />
-            <Route path="timetable" element={<AdminTimetable />} />
-            <Route path="fees" element={<AdminFees/>} />
-            <Route path="fee-deposits" element={<AdminFeeDeposits />} />
-            <Route path="hostels" element={<AdminHostels />} />
-            <Route path="transport" element={<AdminTransport />} />
-            <Route path="inventory" element={<AdminInventory />} />
-            <Route path="visitors" element={<AdminVisitors />} />
-            <Route path="exams" element={<AdminExams />} />
-            <Route path="notices" element={<AdminNotices />} />
-            <Route path="gallery" element={<AdminGallery />} />
-            <Route path="settings" element={<AdminSettings />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="admissions" element={<AdminAdmissions />} />
+              <Route path="students" element={<AdminStudents />} />
+              <Route path="teachers" element={<AdminTeachers />} />
+              <Route path="classes" element={<AdminClasses />} />
+              <Route path="timetable" element={<AdminTimetable />} />
+              <Route path="fees" element={<AdminFees/>} />
+              <Route path="fee-deposits" element={<AdminFeeDeposits />} />
+              <Route path="hostels" element={<AdminHostels />} />
+              <Route path="transport" element={<AdminTransport />} />
+              <Route path="inventory" element={<AdminInventory />} />
+              <Route path="visitors" element={<AdminVisitors />} />
+              <Route path="exams" element={<AdminExams />} />
+              <Route path="notices" element={<AdminNotices />} />
+              <Route path="gallery" element={<AdminGallery />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
