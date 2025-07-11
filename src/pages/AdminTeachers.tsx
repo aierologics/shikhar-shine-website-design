@@ -103,6 +103,28 @@ const AdminTeachers = () => {
     }
   };
 
+  const generateTeacherId = async () => {
+    const { data, error } = await supabase
+      .from('teachers')
+      .select('teacher_id')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error('Error generating teacher ID:', error);
+      return 'TCH-0001'; // fallback
+    }
+
+    if (data && data.length > 0) {
+      const lastId = data[0].teacher_id; // e.g., "TCH-0021"
+      const num = parseInt(lastId?.split('-')[1] || '0', 10) + 1;
+      return `TCH-${String(num).padStart(4, '0')}`;
+    } else {
+      return 'TCH-0001';
+    }
+  };
+
+
   const fetchLeaves = async () => {
     try {
       const { data, error } = await supabase
@@ -127,28 +149,34 @@ const AdminTeachers = () => {
     e.preventDefault();
     try {
       if (editingTeacher) {
+        // update mode
         const { error } = await supabase
           .from('teachers')
           .update(formData)
           .eq('id', editingTeacher.id);
-        
+
         if (error) throw error;
+
         toast({
           title: "Success",
           description: "Teacher updated successfully",
         });
       } else {
+        // create mode - generate ID
+        const newTeacherId = await generateTeacherId();
+
         const { error } = await supabase
           .from('teachers')
-          .insert([formData]);
-        
+          .insert([{ ...formData, teacher_id: newTeacherId }]);
+
         if (error) throw error;
+
         toast({
           title: "Success",
           description: "Teacher added successfully",
         });
       }
-      
+
       setIsDialogOpen(false);
       setEditingTeacher(null);
       resetForm();
@@ -162,6 +190,7 @@ const AdminTeachers = () => {
       });
     }
   };
+
 
   const handleEdit = (teacher: Teacher) => {
     setEditingTeacher(teacher);
@@ -187,13 +216,13 @@ const AdminTeachers = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this teacher?')) return;
-    
+
     try {
       const { error } = await supabase
         .from('teachers')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
       toast({
         title: "Success",
@@ -214,12 +243,12 @@ const AdminTeachers = () => {
     try {
       const { error } = await supabase
         .from('teacher_leaves')
-        .update({ 
+        .update({
           status: action,
           approved_at: new Date().toISOString()
         })
         .eq('id', leaveId);
-      
+
       if (error) throw error;
       toast({
         title: "Success",
@@ -332,10 +361,11 @@ const AdminTeachers = () => {
                       <Input
                         id="teacher_id"
                         value={formData.teacher_id}
-                        onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
-                        required
+                        readOnly
+                        className="bg-gray-100 cursor-not-allowed"
                       />
                     </div>
+
                     <div>
                       <Label htmlFor="status">Status</Label>
                       <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
@@ -350,7 +380,7 @@ const AdminTeachers = () => {
                       </Select>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="first_name">First Name</Label>

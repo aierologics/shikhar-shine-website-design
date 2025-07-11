@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
   const navItems = [
@@ -51,7 +51,7 @@ const Navigation = () => {
         </Link>
 
         <div className="flex items-center space-x-3">
-          {user ? (
+          {loading ? null : user ? (
             <>
               {isAdmin && (
                 <Link
@@ -80,6 +80,7 @@ const Navigation = () => {
               Sign In
             </Link>
           )}
+
         </div>
       </div>
 

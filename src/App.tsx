@@ -35,6 +35,7 @@ import StaffDetails from "./pages/StaffDetails";
 import TCVerification from "./pages/TCVerification";
 import ContactSection from "./components/ContactSection";
 import AdminFees from "./pages/AdminFees";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -60,23 +61,25 @@ const App = () => (
             <Route path="/admission-documents" element={<AdmissionDocuments />} />
             <Route path="/auth" element={<Auth />} />
             {/* Admin Routes */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="admissions" element={<AdminAdmissions />} />
-              <Route path="students" element={<AdminStudents />} />
-              <Route path="teachers" element={<AdminTeachers />} />
-              <Route path="classes" element={<AdminClasses />} />
-              <Route path="timetable" element={<AdminTimetable />} />
-              <Route path="fees" element={<AdminFees/>} />
-              <Route path="fee-deposits" element={<AdminFeeDeposits />} />
-              <Route path="hostels" element={<AdminHostels />} />
-              <Route path="transport" element={<AdminTransport />} />
-              <Route path="inventory" element={<AdminInventory />} />
-              <Route path="visitors" element={<AdminVisitors />} />
-              <Route path="exams" element={<AdminExams />} />
-              <Route path="notices" element={<AdminNotices />} />
-              <Route path="gallery" element={<AdminGallery />} />
-              <Route path="settings" element={<AdminSettings />} />
+            <Route path="/admin" element={<ProtectedRoute />}>
+              <Route element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="admissions" element={<AdminAdmissions />} />
+                <Route path="students" element={<AdminStudents />} />
+                <Route path="teachers" element={<AdminTeachers />} />
+                <Route path="classes" element={<AdminClasses />} />
+                <Route path="timetable" element={<AdminTimetable />} />
+                <Route path="fees" element={<AdminFees />} />
+                <Route path="fee-deposits" element={<AdminFeeDeposits />} />
+                <Route path="hostels" element={<AdminHostels />} />
+                <Route path="transport" element={<AdminTransport />} />
+                <Route path="inventory" element={<AdminInventory />} />
+                <Route path="visitors" element={<AdminVisitors />} />
+                <Route path="exams" element={<AdminExams />} />
+                <Route path="notices" element={<AdminNotices />} />
+                <Route path="gallery" element={<AdminGallery />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
             </Route>
           </Routes>
         </BrowserRouter>

@@ -3,9 +3,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Search, Edit, Trash2 } from 'lucide-react';
@@ -43,12 +62,12 @@ const AdminClasses = () => {
     capacity: 30,
     room_number: '',
     academic_year: '2024-2025',
-    class_teacher_id: ''
+    class_teacher_id: '',
   });
 
   const classNames = [
     'Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th',
-    '6th', '7th', '8th', '9th', '10th', '11th', '12th'
+    '6th', '7th', '8th', '9th', '10th', '11th', '12th',
   ];
 
   const sections = ['A', 'B', 'C', 'D', 'E'];
@@ -62,13 +81,9 @@ const AdminClasses = () => {
     try {
       const { data, error } = await supabase
         .from('classes')
-        .select(`
-          *,
-          teachers (
-            first_name,
-            last_name
-          )
-        `)
+        .select(
+          `*, teachers ( first_name, last_name )`
+        )
         .order('class_name', { ascending: true });
 
       if (error) throw error;
@@ -76,9 +91,9 @@ const AdminClasses = () => {
     } catch (error) {
       console.error('Error fetching classes:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch classes",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to fetch classes',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -108,24 +123,24 @@ const AdminClasses = () => {
           .from('classes')
           .update(formData)
           .eq('id', editingClass.id);
-        
+
         if (error) throw error;
         toast({
-          title: "Success",
-          description: "Class updated successfully",
+          title: 'Success',
+          description: 'Class updated successfully',
         });
       } else {
         const { error } = await supabase
           .from('classes')
           .insert([formData]);
-        
+
         if (error) throw error;
         toast({
-          title: "Success",
-          description: "Class added successfully",
+          title: 'Success',
+          description: 'Class added successfully',
         });
       }
-      
+
       setIsDialogOpen(false);
       setEditingClass(null);
       resetForm();
@@ -133,9 +148,9 @@ const AdminClasses = () => {
     } catch (error) {
       console.error('Error saving class:', error);
       toast({
-        title: "Error",
-        description: "Failed to save class",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to save class',
+        variant: 'destructive',
       });
     }
   };
@@ -148,41 +163,31 @@ const AdminClasses = () => {
       capacity: classItem.capacity,
       room_number: classItem.room_number || '',
       academic_year: classItem.academic_year,
-      class_teacher_id: classItem.class_teacher_id || ''
+      class_teacher_id: classItem.class_teacher_id || '',
     });
     setIsDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this class?')) return;
-    
+
     try {
-      const { error } = await supabase
-        .from('classes')
-        .delete()
-        .eq('id', id);
-      
+      const { error } = await supabase.from('classes').delete().eq('id', id);
+
       if (error) throw error;
       toast({
-        title: "Success",
-        description: "Class deleted successfully",
+        title: 'Success',
+        description: 'Class deleted successfully',
       });
       fetchClasses();
     } catch (error) {
       console.error('Error deleting class:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete class",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to delete class',
+        variant: 'destructive',
       });
     }
-  };
-
-  const handleAddClass = () => {
-    console.log('Add Class button clicked');
-    resetForm();
-    setEditingClass(null);
-    setIsDialogOpen(true);
   };
 
   const resetForm = () => {
@@ -192,41 +197,53 @@ const AdminClasses = () => {
       capacity: 30,
       room_number: '',
       academic_year: '2024-2025',
-      class_teacher_id: ''
+      class_teacher_id: '',
     });
   };
 
-  const filteredClasses = classes.filter(classItem =>
+  const filteredClasses = classes.filter((classItem) =>
     classItem.class_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     classItem.section.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (classItem.room_number && classItem.room_number.toLowerCase().includes(searchTerm.toLowerCase()))
+    (classItem.room_number &&
+      classItem.room_number.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Classes & Sections Management</h1>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          console.log('Dialog state changed:', open);
-          setIsDialogOpen(open);
-        }}>
+
+        <Dialog
+          open={isDialogOpen}
+          onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (open && !editingClass) {
+              resetForm();
+              setEditingClass(null);
+            }
+          }}
+        >
           <DialogTrigger asChild>
-            <Button onClick={handleAddClass}>
+            <Button>
               <Plus className="h-4 w-4 mr-2" />
               Add Class
             </Button>
           </DialogTrigger>
+
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>{editingClass ? 'Edit Class' : 'Add New Class'}</DialogTitle>
             </DialogHeader>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="class_name">Class Name</Label>
-                  <Select 
-                    value={formData.class_name} 
-                    onValueChange={(value) => setFormData({ ...formData, class_name: value })}
+                  <Select
+                    value={formData.class_name}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, class_name: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select class" />
@@ -240,11 +257,14 @@ const AdminClasses = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
                 <div>
                   <Label htmlFor="section">Section</Label>
-                  <Select 
-                    value={formData.section} 
-                    onValueChange={(value) => setFormData({ ...formData, section: value })}
+                  <Select
+                    value={formData.section}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, section: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select section" />
@@ -259,7 +279,7 @@ const AdminClasses = () => {
                   </Select>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="capacity">Capacity</Label>
@@ -267,7 +287,9 @@ const AdminClasses = () => {
                     id="capacity"
                     type="number"
                     value={formData.capacity}
-                    onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 30 })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, capacity: parseInt(e.target.value) || 30 })
+                    }
                     required
                   />
                 </div>
@@ -276,7 +298,9 @@ const AdminClasses = () => {
                   <Input
                     id="room_number"
                     value={formData.room_number}
-                    onChange={(e) => setFormData({ ...formData, room_number: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, room_number: e.target.value })
+                    }
                   />
                 </div>
               </div>
@@ -287,21 +311,28 @@ const AdminClasses = () => {
                   <Input
                     id="academic_year"
                     value={formData.academic_year}
-                    onChange={(e) => setFormData({ ...formData, academic_year: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, academic_year: e.target.value })
+                    }
                     required
                   />
                 </div>
                 <div>
                   <Label htmlFor="class_teacher_id">Class Teacher</Label>
-                  <Select 
-                    value={formData.class_teacher_id} 
-                    onValueChange={(value) => setFormData({ ...formData, class_teacher_id: value })}
+                  <Select
+                    value={formData.class_teacher_id || "none"}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        class_teacher_id: value === "none" ? "" : value,
+                      })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select teacher" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No Teacher Assigned</SelectItem>
+                      <SelectItem value="none">No Teacher Assigned</SelectItem>
                       {teachers.map((teacher) => (
                         <SelectItem key={teacher.id} value={teacher.id}>
                           {teacher.first_name} {teacher.last_name} ({teacher.teacher_id})
@@ -309,11 +340,16 @@ const AdminClasses = () => {
                       ))}
                     </SelectContent>
                   </Select>
+
                 </div>
               </div>
 
               <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit">
@@ -364,10 +400,9 @@ const AdminClasses = () => {
                     <TableCell>{classItem.room_number || 'N/A'}</TableCell>
                     <TableCell>{classItem.capacity}</TableCell>
                     <TableCell>
-                      {classItem.teachers 
-                        ? `${classItem.teachers.first_name} ${classItem.teachers.last_name}` 
-                        : 'Not Assigned'
-                      }
+                      {classItem.teachers
+                        ? `${classItem.teachers.first_name} ${classItem.teachers.last_name}`
+                        : 'Not Assigned'}
                     </TableCell>
                     <TableCell>{classItem.academic_year}</TableCell>
                     <TableCell>

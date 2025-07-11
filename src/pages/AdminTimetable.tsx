@@ -47,10 +47,12 @@ const AdminTimetable = () => {
   const [selectedClass, setSelectedClass] = useState('');
   const { toast } = useToast();
 
+  const PLACEHOLDER_VALUE = "__placeholder__";
+
   const [formData, setFormData] = useState({
-    class_id: '',
-    teacher_id: '',
-    subject: '',
+    class_id: PLACEHOLDER_VALUE,
+    teacher_id: PLACEHOLDER_VALUE,
+    subject: PLACEHOLDER_VALUE,
     day_of_week: 1,
     period_number: 1,
     start_time: '',
@@ -120,6 +122,9 @@ const AdminTimetable = () => {
 
       if (error) throw error;
       setClasses(data || []);
+      if (data && data.length > 0 && !selectedClass) {
+        setSelectedClass(data[0].id);
+      }
     } catch (error) {
       console.error('Error fetching classes:', error);
     }
@@ -147,7 +152,7 @@ const AdminTimetable = () => {
           .from('timetable')
           .update(formData)
           .eq('id', editingEntry.id);
-        
+
         if (error) throw error;
         toast({
           title: "Success",
@@ -157,14 +162,14 @@ const AdminTimetable = () => {
         const { error } = await supabase
           .from('timetable')
           .insert([formData]);
-        
+
         if (error) throw error;
         toast({
           title: "Success",
           description: "Timetable entry added successfully",
         });
       }
-      
+
       setIsDialogOpen(false);
       setEditingEntry(null);
       resetForm();
@@ -181,13 +186,13 @@ const AdminTimetable = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this timetable entry?')) return;
-    
+
     try {
       const { error } = await supabase
         .from('timetable')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
       toast({
         title: "Success",
@@ -204,11 +209,12 @@ const AdminTimetable = () => {
     }
   };
 
+
   const resetForm = () => {
     setFormData({
-      class_id: '',
-      teacher_id: '',
-      subject: '',
+      class_id: PLACEHOLDER_VALUE,
+      teacher_id: PLACEHOLDER_VALUE,
+      subject: PLACEHOLDER_VALUE,
       day_of_week: 1,
       period_number: 1,
       start_time: '',
@@ -220,9 +226,9 @@ const AdminTimetable = () => {
   const handleEdit = (entry: TimetableEntry) => {
     setEditingEntry(entry);
     setFormData({
-      class_id: entry.class_id || '',
-      teacher_id: entry.teacher_id || '',
-      subject: entry.subject,
+      class_id: entry.class_id || PLACEHOLDER_VALUE,
+      teacher_id: entry.teacher_id || PLACEHOLDER_VALUE,
+      subject: entry.subject || PLACEHOLDER_VALUE,
       day_of_week: entry.day_of_week,
       period_number: entry.period_number,
       start_time: entry.start_time,
@@ -232,7 +238,7 @@ const AdminTimetable = () => {
     setIsDialogOpen(true);
   };
 
-  const filteredTimetable = selectedClass 
+  const filteredTimetable = selectedClass
     ? timetable.filter(entry => entry.class_id === selectedClass)
     : timetable;
 
@@ -332,7 +338,10 @@ const AdminTimetable = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="class_id">Class</Label>
-                <Select value={formData.class_id} onValueChange={(value) => setFormData({ ...formData, class_id: value })}>
+                <Select
+                  value={formData.class_id || ""}
+                  onValueChange={(value) => setFormData({ ...formData, class_id: value })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select class" />
                   </SelectTrigger>
@@ -344,15 +353,17 @@ const AdminTimetable = () => {
                     ))}
                   </SelectContent>
                 </Select>
+
               </div>
 
               <div>
                 <Label htmlFor="subject">Subject</Label>
-                <Select value={formData.subject} onValueChange={(value) => setFormData({ ...formData, subject: value })}>
+                <Select value={formData.subject} onValueChange={(value) => setFormData({ ...formData, subject: value })} defaultValue={PLACEHOLDER_VALUE}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select subject" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value={PLACEHOLDER_VALUE}>Select subject</SelectItem>
                     {subjects.map((subject) => (
                       <SelectItem key={subject} value={subject}>
                         {subject}
@@ -364,11 +375,12 @@ const AdminTimetable = () => {
 
               <div>
                 <Label htmlFor="teacher_id">Teacher</Label>
-                <Select value={formData.teacher_id} onValueChange={(value) => setFormData({ ...formData, teacher_id: value })}>
+                <Select value={formData.teacher_id} onValueChange={(value) => setFormData({ ...formData, teacher_id: value })} defaultValue={PLACEHOLDER_VALUE}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select teacher" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value={PLACEHOLDER_VALUE}>Select teacher</SelectItem>
                     {teachers.map((teacher) => (
                       <SelectItem key={teacher.id} value={teacher.id}>
                         {teacher.first_name} {teacher.last_name}
