@@ -69,6 +69,7 @@ export type Database = {
           transfer_certificate_url: string | null
           transport_required: boolean | null
           updated_at: string | null
+          status: string |null
         }
         Insert: {
           aadhar_card_url?: string | null
@@ -78,6 +79,7 @@ export type Database = {
           birth_certificate_url?: string | null
           blood_group?: string | null
           caste?: string | null
+          status: string |null
           created_at?: string | null
           current_address: string
           current_city: string
@@ -133,6 +135,7 @@ export type Database = {
           birth_certificate_url?: string | null
           blood_group?: string | null
           caste?: string | null
+          status: string |null
           created_at?: string | null
           current_address?: string
           current_city?: string
