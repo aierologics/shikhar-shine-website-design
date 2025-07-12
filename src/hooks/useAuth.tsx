@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,28 +37,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
 
-        if (session && session.user) {
-          setUser(session.user);
-          setSession(session);
+        if (!unsubscribed) {
+          if (session && session.user) {
+            setUser(session.user);
+            setSession(session);
 
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
+            try {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', session.user.id)
+                .single();
 
-          setIsAdmin(profile?.role === 'admin');
-        } else {
+              setIsAdmin(profile?.role === 'admin');
+            } catch (err) {
+              console.error('Error fetching user profile:', err);
+              setIsAdmin(false);
+            }
+          } else {
+            setUser(null);
+            setSession(null);
+            setIsAdmin(false);
+          }
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error restoring session:', error);
+        if (!unsubscribed) {
           setUser(null);
           setSession(null);
           setIsAdmin(false);
+          setLoading(false);
         }
-      } catch (error) {
-        setUser(null);
-        setSession(null);
-        setIsAdmin(false);
       }
-      setLoading(false); // <-- Only here!
     };
 
     restoreSession();
@@ -79,13 +91,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             setIsAdmin(profile?.role === 'admin');
           } catch (err) {
+            console.error('Error fetching user profile:', err);
             setIsAdmin(false);
           }
         } else {
           setIsAdmin(false);
         }
 
-        // REMOVE setLoading(false) from here!
+        // Ensure loading is set to false after auth state changes
+        setLoading(false);
       }
     );
 
