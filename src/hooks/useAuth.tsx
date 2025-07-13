@@ -31,110 +31,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
+    // Set loading to false immediately - no auth checks
+    setLoading(false);
 
-    const initializeAuth = async () => {
-      try {
-        // Set up the auth state change listener first
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
-            if (!mounted) return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
 
-            console.log('Auth state changed:', event, session?.user?.id);
-            
-            setSession(session);
-            setUser(session?.user ?? null);
+        if (session?.user) {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
 
-            if (session?.user) {
-              try {
-                const { data: profile } = await supabase
-                  .from('profiles')
-                  .select('role')
-                  .eq('id', session.user.id)
-                  .single();
-
-                if (mounted) {
-                  setIsAdmin(profile?.role === 'admin');
-                }
-              } catch (err) {
-                console.error('Error fetching user profile:', err);
-                if (mounted) {
-                  setIsAdmin(false);
-                }
-              }
-            } else {
-              if (mounted) {
-                setIsAdmin(false);
-              }
-            }
-
-            // Always set loading to false after processing auth state
-            if (mounted) {
-              setLoading(false);
-            }
-          }
-        );
-
-        // Then get the current session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-          if (mounted) {
-            setLoading(false);
-          }
-          return;
-        }
-
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-
-          if (session?.user) {
-            try {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', session.user.id)
-                .single();
-
-              setIsAdmin(profile?.role === 'admin');
-            } catch (err) {
-              console.error('Error fetching user profile:', err);
-              setIsAdmin(false);
-            }
-          } else {
+            setIsAdmin(profile?.role === 'admin');
+          } catch (err) {
             setIsAdmin(false);
           }
-
-          setLoading(false);
-        }
-
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        if (mounted) {
-          setUser(null);
-          setSession(null);
+        } else {
           setIsAdmin(false);
-          setLoading(false);
         }
       }
-    };
+    );
 
-    let cleanup: (() => void) | undefined;
-    
-    initializeAuth().then((cleanupFn) => {
-      cleanup = cleanupFn;
+    // Get current session without blocking
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            setIsAdmin(profile?.role === 'admin');
+          });
+      } else {
+        setIsAdmin(false);
+      }
     });
 
     return () => {
-      mounted = false;
-      if (cleanup) {
-        cleanup();
-      }
+      subscription.unsubscribe();
     };
   }, []);
 
