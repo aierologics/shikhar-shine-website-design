@@ -31,17 +31,66 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    let unsubscribed = false;
+    let mounted = true;
 
-    const restoreSession = async () => {
+    const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Set up the auth state change listener first
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            if (!mounted) return;
 
-        if (!unsubscribed) {
-          if (session && session.user) {
-            setUser(session.user);
+            console.log('Auth state changed:', event, session?.user?.id);
+            
             setSession(session);
+            setUser(session?.user ?? null);
 
+            if (session?.user) {
+              try {
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('role')
+                  .eq('id', session.user.id)
+                  .single();
+
+                if (mounted) {
+                  setIsAdmin(profile?.role === 'admin');
+                }
+              } catch (err) {
+                console.error('Error fetching user profile:', err);
+                if (mounted) {
+                  setIsAdmin(false);
+                }
+              }
+            } else {
+              if (mounted) {
+                setIsAdmin(false);
+              }
+            }
+
+            // Always set loading to false after processing auth state
+            if (mounted) {
+              setLoading(false);
+            }
+          }
+        );
+
+        // Then get the current session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          if (mounted) {
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+
+          if (session?.user) {
             try {
               const { data: profile } = await supabase
                 .from('profiles')
@@ -55,15 +104,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setIsAdmin(false);
             }
           } else {
-            setUser(null);
-            setSession(null);
             setIsAdmin(false);
           }
+
           setLoading(false);
         }
+
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (error) {
-        console.error('Error restoring session:', error);
-        if (!unsubscribed) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
           setUser(null);
           setSession(null);
           setIsAdmin(false);
@@ -72,40 +124,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    restoreSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (unsubscribed) return;
-
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          try {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .single();
-
-            setIsAdmin(profile?.role === 'admin');
-          } catch (err) {
-            console.error('Error fetching user profile:', err);
-            setIsAdmin(false);
-          }
-        } else {
-          setIsAdmin(false);
-        }
-
-        // Ensure loading is set to false after auth state changes
-        setLoading(false);
-      }
-    );
+    let cleanup: (() => void) | undefined;
+    
+    initializeAuth().then((cleanupFn) => {
+      cleanup = cleanupFn;
+    });
 
     return () => {
-      unsubscribed = true;
-      subscription.unsubscribe();
+      mounted = false;
+      if (cleanup) {
+        cleanup();
+      }
     };
   }, []);
 
