@@ -31,8 +31,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    console.log('🔧 useAuth: Initializing...');
     // Set loading to false immediately - no auth checks
     setLoading(false);
+    console.log('⚡ useAuth: Loading set to false immediately');
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {

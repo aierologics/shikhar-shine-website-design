@@ -20,18 +20,33 @@ const NoticeBoardSection = () => {
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    console.log('🎯 NoticeBoardSection mounted, starting fetch...');
     fetchNotices();
   }, []);
 
   const fetchNotices = async () => {
-    const { data, error } = await supabase
-      .from('notices')
-      .select('*, notice_number')
-      .order('date', { ascending: false })
-      .limit(5);
+    console.log('🚀 Starting to fetch notices...');
+    try {
+      const { data, error } = await supabase
+        .from('notices')
+        .select('*, notice_number')
+        .order('date', { ascending: false })
+        .limit(5);
 
-    if (!error) setNotices(data || []);
-    setLoading(false);
+      console.log('📡 Supabase response:', { data, error });
+      
+      if (error) {
+        console.error('❌ Error fetching notices:', error);
+      } else {
+        console.log('✅ Successfully fetched notices:', data);
+        setNotices(data || []);
+      }
+    } catch (err) {
+      console.error('💥 Unexpected error:', err);
+    } finally {
+      setLoading(false);
+      console.log('🏁 Loading complete');
+    }
   };
 
   const getTypeIcon = (type: string) => {
