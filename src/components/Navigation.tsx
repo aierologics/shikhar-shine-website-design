@@ -33,7 +33,7 @@ const Navigation = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    navigate('/auth');
     localStorage.clear();
   };
 

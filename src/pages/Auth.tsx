@@ -59,7 +59,7 @@ const Auth = () => {
             title: "Success",
             description: "Successfully signed in!",
           });
-          navigate('/');
+          navigate('/admin');
         }
       } else {
         console.log('Attempting signup...');

@@ -81,9 +81,7 @@ const AdminClasses = () => {
     try {
       const { data, error } = await supabase
         .from('classes')
-        .select(
-          `*, teachers ( first_name, last_name )`
-        )
+        .select(`*, teachers ( first_name, last_name )`)
         .order('class_name', { ascending: true });
 
       if (error) throw error;
@@ -117,14 +115,21 @@ const AdminClasses = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const payload = {
+      ...formData,
+      class_teacher_id: formData.class_teacher_id || null,
+    };
+
     try {
       if (editingClass) {
         const { error } = await supabase
           .from('classes')
-          .update(formData)
+          .update(payload)
           .eq('id', editingClass.id);
 
         if (error) throw error;
+
         toast({
           title: 'Success',
           description: 'Class updated successfully',
@@ -132,9 +137,10 @@ const AdminClasses = () => {
       } else {
         const { error } = await supabase
           .from('classes')
-          .insert([formData]);
+          .insert([payload]);
 
         if (error) throw error;
+
         toast({
           title: 'Success',
           description: 'Class added successfully',
@@ -320,11 +326,11 @@ const AdminClasses = () => {
                 <div>
                   <Label htmlFor="class_teacher_id">Class Teacher</Label>
                   <Select
-                    value={formData.class_teacher_id || "none"}
+                    value={formData.class_teacher_id || 'none'}
                     onValueChange={(value) =>
                       setFormData({
                         ...formData,
-                        class_teacher_id: value === "none" ? "" : value,
+                        class_teacher_id: value === 'none' ? '' : value,
                       })
                     }
                   >
@@ -340,21 +346,14 @@ const AdminClasses = () => {
                       ))}
                     </SelectContent>
                   </Select>
-
                 </div>
               </div>
 
               <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">
-                  {editingClass ? 'Update' : 'Add'} Class
-                </Button>
+                <Button type="submit">{editingClass ? 'Update' : 'Add'} Class</Button>
               </div>
             </form>
           </DialogContent>

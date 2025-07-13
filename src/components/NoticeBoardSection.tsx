@@ -15,7 +15,7 @@ interface Notice {
 
 const NoticeBoardSection = () => {
   const [notices, setNotices] = useState<Notice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [,setLoading] = useState(true);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 

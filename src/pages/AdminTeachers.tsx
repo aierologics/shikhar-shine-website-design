@@ -47,6 +47,7 @@ const AdminTeachers = () => {
   const [leaves, setLeaves] = useState<Leave[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [leaveSearchTerm, setLeaveSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
@@ -69,6 +70,15 @@ const AdminTeachers = () => {
     status: 'active',
     emergency_contact_name: '',
     emergency_contact_phone: ''
+  });
+
+  const [leaveFormData, setLeaveFormData] = useState({
+    leave_type: '',
+    start_date: '',
+    end_date: '',
+    reason: '',
+    status: 'pending',
+    teacher_id: ''
   });
 
   const subjectsList = [
@@ -142,6 +152,39 @@ const AdminTeachers = () => {
       setLeaves(data || []);
     } catch (error) {
       console.error('Error fetching leaves:', error);
+    }
+  };
+
+  const handleLeaveSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase
+        .from('teacher_leaves')
+        .insert([leaveFormData]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Leave added successfully",
+      });
+      setIsLeaveDialogOpen(false);
+      setLeaveFormData({
+        leave_type: '',
+        start_date: '',
+        end_date: '',
+        reason: '',
+        status: 'pending',
+        teacher_id: ''
+      });
+      fetchLeaves();
+    } catch (error) {
+      console.error('Error adding leave:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add leave",
+        variant: "destructive",
+      });
     }
   };
 
@@ -241,20 +284,41 @@ const AdminTeachers = () => {
 
   const handleLeaveAction = async (leaveId: string, action: 'approved' | 'rejected') => {
     try {
-      const { error } = await supabase
+      const { data: leaveData, error: updateLeaveError } = await supabase
         .from('teacher_leaves')
         .update({
           status: action,
           approved_at: new Date().toISOString()
         })
-        .eq('id', leaveId);
+        .eq('id', leaveId)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (updateLeaveError) throw updateLeaveError;
+
+      if (action === 'approved' && leaveData) {
+        // Update teacher status to 'on_leave'
+        const { error: updateTeacherError } = await supabase
+          .from('teachers')
+          .update({ status: 'on_leave' })
+          .eq('id', leaveData.teacher_id);
+
+        if (updateTeacherError) {
+          console.error('Error updating teacher status:', updateTeacherError);
+          toast({
+            title: "Error",
+            description: "Failed to update teacher status",
+            variant: "destructive",
+          });
+        }
+      }
+
       toast({
         title: "Success",
         description: `Leave ${action} successfully`,
       });
       fetchLeaves();
+      fetchTeachers();
     } catch (error) {
       console.error('Error updating leave:', error);
       toast({
@@ -619,63 +683,191 @@ const AdminTeachers = () => {
       )}
 
       {activeTab === 'leaves' && (
-        <Card>
-          <CardHeader>
+        <>
+          <div className="flex justify-between items-center">
             <CardTitle>Leave Management</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Teacher</TableHead>
-                  <TableHead>Leave Type</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead>End Date</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leaves.map((leave) => (
-                  <TableRow key={leave.id}>
-                    <TableCell>
-                      {leave.teachers?.first_name} {leave.teachers?.last_name}
-                    </TableCell>
-                    <TableCell className="capitalize">{leave.leave_type}</TableCell>
-                    <TableCell>{new Date(leave.start_date).toLocaleDateString()}</TableCell>
-                    <TableCell>{new Date(leave.end_date).toLocaleDateString()}</TableCell>
-                    <TableCell>{leave.reason || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Badge className={getLeaveStatusBadge(leave.status)}>
-                        {leave.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {leave.status === 'pending' && (
-                        <div className="flex space-x-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleLeaveAction(leave.id, 'approved')}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleLeaveAction(leave.id, 'rejected')}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
+            <div className="flex items-center space-x-2">
+              <Input
+                placeholder="Search leaves..."
+                value={leaveSearchTerm}
+                onChange={(e) => setLeaveSearchTerm(e.target.value)}
+                className="w-64"
+              />
+              <Dialog open={isLeaveDialogOpen} onOpenChange={setIsLeaveDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    Add Leave
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Add New Leave</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleLeaveSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="leave_type">Leave Type</Label>
+                        <Select
+                          value={leaveFormData.leave_type}
+                          onValueChange={(value) => setLeaveFormData({ ...leaveFormData, leave_type: value })}
+                          required
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select leave type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sick">Sick Leave</SelectItem>
+                            <SelectItem value="casual">Casual Leave</SelectItem>
+                            <SelectItem value="maternity">Maternity Leave</SelectItem>
+                            <SelectItem value="paternity">Paternity Leave</SelectItem>
+                            <SelectItem value="earned">Earned Leave</SelectItem>
+                            <SelectItem value="unpaid">Unpaid Leave</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="status">Status</Label>
+                        <Select value={leaveFormData.status} onValueChange={(value) => setLeaveFormData({ ...leaveFormData, status: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="approved">Approved</SelectItem>
+                            <SelectItem value="rejected">Rejected</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="start_date">Start Date</Label>
+                        <Input
+                          id="start_date"
+                          type="date"
+                          value={leaveFormData.start_date}
+                          onChange={(e) => setLeaveFormData({ ...leaveFormData, start_date: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="end_date">End Date</Label>
+                        <Input
+                          id="end_date"
+                          type="date"
+                          value={leaveFormData.end_date}
+                          onChange={(e) => setLeaveFormData({ ...leaveFormData, end_date: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="reason">Reason</Label>
+                      <Input
+                        id="reason"
+                        value={leaveFormData.reason}
+                        onChange={(e) => setLeaveFormData({ ...leaveFormData, reason: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="teacher_id">Teacher</Label>
+                      <Select value={leaveFormData.teacher_id} onValueChange={(value) => setLeaveFormData({ ...leaveFormData, teacher_id: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select teacher" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teachers.map((teacher) => (
+                            <SelectItem key={teacher.id} value={teacher.id}>
+                              {teacher.first_name} {teacher.last_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex justify-end space-x-2">
+                      <Button type="button" variant="outline" onClick={() => setIsLeaveDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit">
+                        Add Leave
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Teacher</TableHead>
+                    <TableHead>Leave Type</TableHead>
+                    <TableHead>Start Date</TableHead>
+                    <TableHead>End Date</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {leaves
+                    .filter((leave) => {
+                      const search = leaveSearchTerm.toLowerCase();
+                      const teacherName = `${leave.teachers?.first_name ?? ''} ${leave.teachers?.last_name ?? ''}`.toLowerCase();
+                      return (
+                        teacherName.includes(search) ||
+                        leave.leave_type.toLowerCase().includes(search) ||
+                        leave.reason?.toLowerCase().includes(search) ||
+                        leave.status.toLowerCase().includes(search)
+                      );
+                    })
+                    .map((leave) => (
+                      <TableRow key={leave.id}>
+                        <TableCell>
+                          {leave.teachers?.first_name} {leave.teachers?.last_name}
+                        </TableCell>
+                        <TableCell className="capitalize">{leave.leave_type}</TableCell>
+                        <TableCell>{new Date(leave.start_date).toLocaleDateString()}</TableCell>
+                        <TableCell>{new Date(leave.end_date).toLocaleDateString()}</TableCell>
+                        <TableCell>{leave.reason || 'N/A'}</TableCell>
+                        <TableCell>
+                          <Badge className={getLeaveStatusBadge(leave.status)}>
+                            {leave.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {leave.status === 'pending' && (
+                            <div className="flex space-x-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleLeaveAction(leave.id, 'approved')}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleLeaveAction(leave.id, 'rejected')}
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </CardHeader>
+          </Card>
+        </>
       )}
     </div>
   );

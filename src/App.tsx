@@ -62,7 +62,7 @@ const App = () => (
             <Route path="/admission-documents" element={<AdmissionDocuments />} />
             <Route path="/auth" element={<Auth />} />
             {/* Admin Routes */}
-            <Route path="/admin">
+            <Route path="/admin" element={<ProtectedRoute />}>
               <Route element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="admissions" element={<AdminAdmissions />} />

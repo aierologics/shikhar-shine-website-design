@@ -7,6 +7,7 @@ const ProtectedRoute: React.FC = () => {
 
   console.log("ProtectedRoute:", { user, loading });
 
+
   if (loading) {
     return <div className="text-center p-8">Loading...</div>;
   }
