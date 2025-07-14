@@ -44,6 +44,7 @@ export type Database = {
           guardian_phone: string | null
           guardian_relation: string | null
           id: string
+          is_synced: boolean | null
           marksheet_url: string | null
           medical_conditions: string | null
           mother_email: string | null
@@ -100,6 +101,7 @@ export type Database = {
           guardian_phone?: string | null
           guardian_relation?: string | null
           id?: string
+          is_synced?: boolean | null
           marksheet_url?: string | null
           medical_conditions?: string | null
           mother_email?: string | null
@@ -156,6 +158,7 @@ export type Database = {
           guardian_phone?: string | null
           guardian_relation?: string | null
           id?: string
+          is_synced?: boolean | null
           marksheet_url?: string | null
           medical_conditions?: string | null
           mother_email?: string | null
@@ -1248,6 +1251,134 @@ export type Database = {
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transfer_certificates: {
+        Row: {
+          admission_no: string
+          application_date: string | null
+          board_exam: string | null
+          caste: string | null
+          class: string | null
+          class_teacher_sign: string | null
+          created_at: string | null
+          dob: string | null
+          dob_words: string | null
+          failed_before: boolean | null
+          father_name: string | null
+          first_admission_date: string | null
+          games_activities: string | null
+          general_conduct: string | null
+          id: string
+          issue_date: string | null
+          last_class_studied: string | null
+          mother_name: string | null
+          nationality: string | null
+          ncc_scout_guide: boolean | null
+          other_remarks: string | null
+          principal_sign: string | null
+          promotion_status: string | null
+          reason_for_leaving: string | null
+          roll_number: number | null
+          school_seal: string | null
+          scst: boolean | null
+          session: string | null
+          sr_no: string | null
+          status: string | null
+          student_id: string
+          student_name: string
+          subjects: string | null
+          tc_number: string
+          total_present_days: number | null
+          total_working_days: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          admission_no: string
+          application_date?: string | null
+          board_exam?: string | null
+          caste?: string | null
+          class?: string | null
+          class_teacher_sign?: string | null
+          created_at?: string | null
+          dob?: string | null
+          dob_words?: string | null
+          failed_before?: boolean | null
+          father_name?: string | null
+          first_admission_date?: string | null
+          games_activities?: string | null
+          general_conduct?: string | null
+          id?: string
+          issue_date?: string | null
+          last_class_studied?: string | null
+          mother_name?: string | null
+          nationality?: string | null
+          ncc_scout_guide?: boolean | null
+          other_remarks?: string | null
+          principal_sign?: string | null
+          promotion_status?: string | null
+          reason_for_leaving?: string | null
+          roll_number?: number | null
+          school_seal?: string | null
+          scst?: boolean | null
+          session?: string | null
+          sr_no?: string | null
+          status?: string | null
+          student_id: string
+          student_name: string
+          subjects?: string | null
+          tc_number: string
+          total_present_days?: number | null
+          total_working_days?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          admission_no?: string
+          application_date?: string | null
+          board_exam?: string | null
+          caste?: string | null
+          class?: string | null
+          class_teacher_sign?: string | null
+          created_at?: string | null
+          dob?: string | null
+          dob_words?: string | null
+          failed_before?: boolean | null
+          father_name?: string | null
+          first_admission_date?: string | null
+          games_activities?: string | null
+          general_conduct?: string | null
+          id?: string
+          issue_date?: string | null
+          last_class_studied?: string | null
+          mother_name?: string | null
+          nationality?: string | null
+          ncc_scout_guide?: boolean | null
+          other_remarks?: string | null
+          principal_sign?: string | null
+          promotion_status?: string | null
+          reason_for_leaving?: string | null
+          roll_number?: number | null
+          school_seal?: string | null
+          scst?: boolean | null
+          session?: string | null
+          sr_no?: string | null
+          status?: string | null
+          student_id?: string
+          student_name?: string
+          subjects?: string | null
+          tc_number?: string
+          total_present_days?: number | null
+          total_working_days?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_student"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
