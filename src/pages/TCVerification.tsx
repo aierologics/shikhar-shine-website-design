@@ -1,4 +1,3 @@
-
 import { ArrowLeft, Search, Download, FileCheck, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState, useRef } from 'react';
@@ -9,110 +8,117 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { supabase } from '@/integrations/supabase/client';
 
 const TCVerification = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [verificationResult, setVerificationResult] = useState(null);
+  const [loading, setLoading] = useState(false);
   const printRef = useRef(null);
+  const { toast } = useToast();
 
-  // Mock verification data - extended with all details from screenshot
-  const mockTCData = {
-    'TC001': {
-      admissionNo: '255/2016-17',
-      srNo: '139',
-      rollNumber:2098,
-      class:"XII Science",
-      session:"2024-25",
-      studentName: 'Rahul Sharma',
-      fatherName: 'Suresh Sharma',
-      motherName: 'Sunita Sharma',
-      nationality: 'Indian',
-      caste: 'General',
-      scst: 'No',
-      firstAdmissionDate: '2011-04-15',
-      dob: '2006-05-20',
-      dobWords: 'Fifteen April Two Thousand Six',
-      lastClassStudied: 'XII Science',
-      boardExam: 'CBSE Annual Examination',
-      failedBefore: 'No',
-      subjects: 'English, Hindi, Math, Physics, Chemistry',
-      promotionStatus: 'Promoted to Grade XII',
-      totalWorkingDays: 220,
-      totalPresentDays: 205,
-      nccScoutGuide: 'No',
-      gamesActivities: 'Football, Basketball',
-      generalConduct: 'Good',
-      applicationDate: '2024-03-01',
-      issueDate: '2024-03-15',
-      reasonForLeaving: 'Relocation of family',
-      otherRemarks: 'N/A',
-      classTeacherSign: 'Class Teacher Signature',
-      principalSign: 'Principal Signature',
-      schoolSeal: 'School Seal',
-      tcNumber: 'TC001',
-      status: 'Verified'
-    },
-    'TC002': {
-      admissionNo: '256/2017-18',
-      srNo: '140',
-      rollNumber:2099,
-      class:"X",
-      session:"2024-25",
-      studentName: 'Priya Gupta',
-      fatherName: 'Rajesh Gupta',
-      motherName: 'Anita Gupta',
-      nationality: 'Indian',
-      caste: 'OBC',
-      scst: 'No',
-      firstAdmissionDate: '2012-06-10',
-      dob: '2008-08-15',
-      dobWords: 'Fifteen August Two Thousand Eight',
-      lastClassStudied: 'X',
-      boardExam: 'CBSE Annual Examination',
-      failedBefore: 'No',
-      subjects: 'English, Hindi, Math, Social Science',
-      promotionStatus: 'Promoted to Grade XI',
-      totalWorkingDays: 220,
-      totalPresentDays: 218,
-      nccScoutGuide: 'Yes',
-      gamesActivities: 'Volleyball, Chess',
-      generalConduct: 'Excellent',
-      applicationDate: '2024-02-25',
-      issueDate: '2024-03-10',
-      reasonForLeaving: 'Transfer to another school',
-      otherRemarks: 'N/A',
-      classTeacherSign: 'Class Teacher Signature',
-      principalSign: 'Principal Signature',
-      schoolSeal: 'School Seal',
-      tcNumber: 'TC002',
-      status: 'Verified'
+  const handleVerification = async () => {
+    if (!searchTerm.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a TC number",
+        variant: "destructive"
+      });
+      return;
     }
-  };
 
-  const handleVerification = () => {
-    if (searchTerm.trim()) {
-      const result = mockTCData[searchTerm.toUpperCase()];
-      setVerificationResult(result || 'not_found');
+    setLoading(true);
+    try {
+      console.log('🔍 Searching for TC:', searchTerm.toUpperCase());
+      
+      const { data, error } = await supabase
+        .from('transfer_certificates')
+        .select('*')
+        .eq('tc_number', searchTerm.toUpperCase())
+        .single();
+
+      if (error) {
+        console.error('❌ TC search error:', error);
+        if (error.code === 'PGRST116') {
+          // No rows returned
+          setVerificationResult('not_found');
+        } else {
+          throw error;
+        }
+      } else {
+        console.log('✅ TC found:', data);
+        setVerificationResult(data);
+        toast({
+          title: "Success",
+          description: "Transfer Certificate verified successfully!",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('❌ Verification failed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to verify TC. Please try again.",
+        variant: "destructive"
+      });
+      setVerificationResult('not_found');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDownload = async () => {
-    if (!verificationResult) return;
-    const input = printRef.current;
-    if (!input) return;
+    if (!verificationResult || verificationResult === 'not_found') return;
+    
+    try {
+      const input = printRef.current;
+      if (!input) return;
 
-    const pdf = new jsPDF('p', 'pt', 'a4');
-    const canvas = await html2canvas(input, { scale: 2 });
-    const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const canvas = await html2canvas(input, { 
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true
+      });
+      const imgData = canvas.toDataURL('image/png');
 
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`${verificationResult.studentName}_TC.pdf`);
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${verificationResult.student_name}_TC_Verification.pdf`);
+      
+      toast({
+        title: "Success",
+        description: "Verification certificate downloaded successfully!",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('❌ Download failed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download certificate. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return dateString;
+    }
   };
 
   return (
@@ -140,14 +146,16 @@ const TCVerification = () => {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="mt-1"
+                      onKeyPress={(e) => e.key === 'Enter' && handleVerification()}
                     />
                   </div>
                   <Button 
                     onClick={handleVerification}
+                    disabled={loading}
                     className="w-full bg-school-blue hover:bg-school-blue/90"
                   >
                     <Search className="mr-2 h-4 w-4" />
-                    Verify TC
+                    {loading ? 'Verifying...' : 'Verify TC'}
                   </Button>
                 </div>
               </CardContent>
@@ -178,15 +186,15 @@ const TCVerification = () => {
                       <div className="space-y-4">
                         <div className="border-b pb-2">
                           <p className="text-sm text-gray-600">Student Name</p>
-                          <p className="font-semibold text-school-blue">{verificationResult.studentName}</p>
+                          <p className="font-semibold text-school-blue">{verificationResult.student_name}</p>
                         </div>
                         <div className="border-b pb-2">
                           <p className="text-sm text-gray-600">Father's Name</p>
-                          <p className="font-semibold">{verificationResult.fatherName}</p>
+                          <p className="font-semibold">{verificationResult.father_name}</p>
                         </div>
                         <div className="border-b pb-2">
                           <p className="text-sm text-gray-600">Roll Number</p>
-                          <p className="font-semibold">{verificationResult.rollNumber}</p>
+                          <p className="font-semibold">{verificationResult.roll_number}</p>
                         </div>
                         <div className="border-b pb-2">
                           <p className="text-sm text-gray-600">Class</p>
@@ -201,15 +209,15 @@ const TCVerification = () => {
                       <div className="space-y-4">
                         <div className="border-b pb-2">
                           <p className="text-sm text-gray-600">TC Number</p>
-                          <p className="font-semibold text-school-orange">{verificationResult.tcNumber}</p>
+                          <p className="font-semibold text-school-orange">{verificationResult.tc_number}</p>
                         </div>
                         <div className="border-b pb-2">
                           <p className="text-sm text-gray-600">Issue Date</p>
-                          <p className="font-semibold">{verificationResult.issueDate}</p>
+                          <p className="font-semibold">{formatDate(verificationResult.issue_date)}</p>
                         </div>
                         <div className="border-b pb-2">
                           <p className="text-sm text-gray-600">Date of Birth</p>
-                          <p className="font-semibold">{verificationResult.dob}</p>
+                          <p className="font-semibold">{formatDate(verificationResult.dob)}</p>
                         </div>
                         <div className="border-b pb-2">
                           <p className="text-sm text-gray-600">Caste</p>
@@ -217,7 +225,7 @@ const TCVerification = () => {
                         </div>
                         <div className="border-b pb-2">
                           <p className="text-sm text-gray-600">Conduct</p>
-                          <p className="font-semibold text-green-600">{verificationResult.generalConduct}</p>
+                          <p className="font-semibold text-green-600">{verificationResult.general_conduct}</p>
                         </div>
                       </div>
                     </div>
@@ -225,11 +233,11 @@ const TCVerification = () => {
                     <div className="mt-6 grid md:grid-cols-2 gap-4">
                       <div className="bg-blue-50 p-4 rounded-lg">
                         <p className="text-sm text-gray-600">Working Days</p>
-                        <p className="font-bold text-school-blue text-xl">{verificationResult.totalWorkingDays}</p>
+                        <p className="font-bold text-school-blue text-xl">{verificationResult.total_working_days}</p>
                       </div>
                       <div className="bg-green-50 p-4 rounded-lg">
                         <p className="text-sm text-gray-600">Attended Days</p>
-                        <p className="font-bold text-green-600 text-xl">{verificationResult.totalPresentDays}</p>
+                        <p className="font-bold text-green-600 text-xl">{verificationResult.total_present_days}</p>
                       </div>
                     </div>
                     
@@ -267,51 +275,55 @@ const TCVerification = () => {
                     </div>
                   </div>
                   <h3 style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '14pt', marginBottom: '10px' }}>
-                    TRANSFER CERTIFICATE
+                    TRANSFER CERTIFICATE VERIFICATION
                   </h3>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-                    <div><strong>Admission No.:</strong> {verificationResult.admissionNo}</div>
-                    <div><strong>S. R. No.:</strong> {verificationResult.srNo}</div>
+                    <div><strong>Admission No.:</strong> {verificationResult.admission_no}</div>
+                    <div><strong>S. R. No.:</strong> {verificationResult.sr_no}</div>
                   </div>
                   <table style={{ width: '100%', marginTop: '10px', borderCollapse: 'collapse' }}>
                     <tbody>
-                      <tr><td style={{  padding: '5px' }}>1. Name of the Pupil</td><td style={{  padding: '5px' }}>{verificationResult.studentName}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>2. Father's / Guardian's name</td><td style={{  padding: '5px' }}>{verificationResult.fatherName}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>3. Mother's Name</td><td style={{  padding: '5px' }}>{verificationResult.motherName}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>1. Name of the Pupil</td><td style={{  padding: '5px' }}>{verificationResult.student_name}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>2. Father's / Guardian's name</td><td style={{  padding: '5px' }}>{verificationResult.father_name}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>3. Mother's Name</td><td style={{  padding: '5px' }}>{verificationResult.mother_name}</td></tr>
                       <tr><td style={{  padding: '5px' }}>4. Nationality</td><td style={{  padding: '5px' }}>{verificationResult.nationality}</td></tr>
                       <tr><td style={{  padding: '5px' }}>5. Caste</td><td style={{  padding: '5px' }}>{verificationResult.caste}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>6. Whether the Candidate belongs to SC / ST</td><td style={{  padding: '5px' }}>{verificationResult.scst}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>7. Date of First admission in school with class</td><td style={{  padding: '5px' }}>{verificationResult.firstAdmissionDate}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>8. Date of Birth (In Christian Era) according to admission Registration in Figure & words</td><td style={{  padding: '5px' }}>{verificationResult.dob} ({verificationResult.dobWords})</td></tr>
-                      <tr><td style={{  padding: '5px' }}>9. Class in which the pupil last studied in words & Figure</td><td style={{  padding: '5px' }}>{verificationResult.lastClassStudied}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>10. School / Board Annual Examination last taken with result</td><td style={{  padding: '5px' }}>{verificationResult.boardExam}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>11. Whether failed : if so once / twice in the same class</td><td style={{  padding: '5px' }}>{verificationResult.failedBefore}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>6. Whether the Candidate belongs to SC / ST</td><td style={{  padding: '5px' }}>{verificationResult.scst ? 'Yes' : 'No'}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>7. Date of First admission in school with class</td><td style={{  padding: '5px' }}>{formatDate(verificationResult.first_admission_date)}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>8. Date of Birth (In Christian Era) according to admission Registration in Figure & words</td><td style={{  padding: '5px' }}>{formatDate(verificationResult.dob)} ({verificationResult.dob_words})</td></tr>
+                      <tr><td style={{  padding: '5px' }}>9. Class in which the pupil last studied in words & Figure</td><td style={{  padding: '5px' }}>{verificationResult.last_class_studied}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>10. School / Board Annual Examination last taken with result</td><td style={{  padding: '5px' }}>{verificationResult.board_exam}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>11. Whether failed : if so once / twice in the same class</td><td style={{  padding: '5px' }}>{verificationResult.failed_before ? 'Yes' : 'No'}</td></tr>
                       <tr><td style={{  padding: '5px' }}>12. Subjects studied / Compulsory</td><td style={{  padding: '5px' }}>{verificationResult.subjects}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>13. Whether qualified for promotion to higher class is so, to which class</td><td style={{  padding: '5px' }}>{verificationResult.promotionStatus}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>14. Total No. of working days</td><td style={{  padding: '5px' }}>{verificationResult.totalWorkingDays}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>15. Total No. of working days present</td><td style={{  padding: '5px' }}>{verificationResult.totalPresentDays}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>16. Whether NCC Cadet/Boys Scout/Girl Guide (Details may be given)</td><td style={{  padding: '5px' }}>{verificationResult.nccScoutGuide}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>17. Games played or extra curricular activities which the pupil usually took part</td><td style={{  padding: '5px' }}>{verificationResult.gamesActivities}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>18. General Conduct</td><td style={{  padding: '5px' }}>{verificationResult.generalConduct}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>19. Date of application for certificate</td><td style={{  padding: '5px' }}>{verificationResult.applicationDate}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>20. Date of Issue of Certificate</td><td style={{  padding: '5px' }}>{verificationResult.issueDate}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>21. Reason for leaving the school</td><td style={{  padding: '5px' }}>{verificationResult.reasonForLeaving}</td></tr>
-                      <tr><td style={{  padding: '5px' }}>22. Any Other Remarks</td><td style={{  padding: '5px' }}>{verificationResult.otherRemarks}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>13. Whether qualified for promotion to higher class is so, to which class</td><td style={{  padding: '5px' }}>{verificationResult.promotion_status}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>14. Total No. of working days</td><td style={{  padding: '5px' }}>{verificationResult.total_working_days}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>15. Total No. of working days present</td><td style={{  padding: '5px' }}>{verificationResult.total_present_days}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>16. Whether NCC Cadet/Boys Scout/Girl Guide (Details may be given)</td><td style={{  padding: '5px' }}>{verificationResult.ncc_scout_guide ? 'Yes' : 'No'}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>17. Games played or extra curricular activities which the pupil usually took part</td><td style={{  padding: '5px' }}>{verificationResult.games_activities}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>18. General Conduct</td><td style={{  padding: '5px' }}>{verificationResult.general_conduct}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>19. Date of application for certificate</td><td style={{  padding: '5px' }}>{formatDate(verificationResult.application_date)}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>20. Date of Issue of Certificate</td><td style={{  padding: '5px' }}>{formatDate(verificationResult.issue_date)}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>21. Reason for leaving the school</td><td style={{  padding: '5px' }}>{verificationResult.reason_for_leaving}</td></tr>
+                      <tr><td style={{  padding: '5px' }}>22. Any Other Remarks</td><td style={{  padding: '5px' }}>{verificationResult.other_remarks}</td></tr>
                     </tbody>
                   </table>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '40px' }}>
                     <div style={{ textAlign: 'center' }}>
-                      <p>{verificationResult.classTeacherSign}</p>
+                      <p>{verificationResult.class_teacher_sign}</p>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <p>{verificationResult.principalSign}</p>
+                      <p>{verificationResult.principal_sign}</p>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <p>{verificationResult.schoolSeal}</p>
+                      <p>{verificationResult.school_seal}</p>
                     </div>
                   </div>
+                  <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '8pt', color: '#666' }}>
+                    <p><strong>Verification Status:</strong> {verificationResult.status}</p>
+                    <p><strong>Verified On:</strong> {new Date().toLocaleDateString('en-IN')}</p>
+                    <p style={{ fontStyle: 'italic' }}>This verification certificate is generated electronically and confirms the authenticity of the Transfer Certificate.</p>
+                  </div>
                 </div>
-                <p className='italic'>This Transfer Certificate will be considered invalid without principal's stamp and CT signature.</p>
               </div>
             </>
           )}
@@ -335,16 +347,30 @@ const TCVerification = () => {
                 </ul>
                 <div className="bg-yellow-50 p-4 rounded-lg mt-4">
                   <p className="text-sm text-yellow-800">
-                    <strong>Note:</strong> If you face any issues with verification, please contact the school office 
-                    at +91-XXXXXXXXXX or email at info@shikharschool.in
+                    <strong>Note:</strong> This verification system is connected to our official database. 
+                    Only genuine transfer certificates issued by our school will show as verified.
+                  </p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>For any queries:</strong> Contact the school office at +91-5924-250045 or email admin@shikharsadan.edu.in
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          <div className="text-center mt-8">
+            <Link 
+              to="/" 
+              className="inline-flex items-center text-school-blue hover:text-school-blue/80 transition-colors"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Home
+            </Link>
+          </div>
         </div>
       </div>
-
       <Footer />
     </div>
   );

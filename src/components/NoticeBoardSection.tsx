@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Calendar, Megaphone, Pin, X, Printer } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface Notice {
   id: string;
@@ -14,8 +15,11 @@ interface Notice {
 }
 
 const NoticeBoardSection = () => {
+  console.log('🎯 NoticeBoardSection component starting...');
+  
   const [notices, setNotices] = useState<Notice[]>([]);
-  const [,setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -27,6 +31,7 @@ const NoticeBoardSection = () => {
   const fetchNotices = async () => {
     console.log('🚀 Starting to fetch notices...');
     try {
+      setError(null);
       const { data, error } = await supabase
         .from('notices')
         .select('*, notice_number')
@@ -37,12 +42,14 @@ const NoticeBoardSection = () => {
       
       if (error) {
         console.error('❌ Error fetching notices:', error);
+        setError(`Failed to load notices: ${error.message}`);
       } else {
         console.log('✅ Successfully fetched notices:', data);
         setNotices(data || []);
       }
     } catch (err) {
       console.error('💥 Unexpected error:', err);
+      setError(`Unexpected error: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
       console.log('🏁 Loading complete');
@@ -82,49 +89,88 @@ const NoticeBoardSection = () => {
   };
 
   return (
-    <section className="py-16 bg-gray-50 dark:bg-gray-900 mt-[-100px]">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">📋 Notice Board</h2>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Stay updated with the latest announcements, events, and important information from our school.
-          </p>
-        </div>
+    <ErrorBoundary>
+      <section className="py-16 bg-gray-50 dark:bg-gray-900 mt-[-100px]">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">📋 Notice Board</h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Stay updated with the latest announcements, events, and important information from our school.
+            </p>
+          </div>
 
-        <div className="max-w-4xl mx-auto space-y-4">
-          {notices.map((notice) => (
-            <Card
-              key={notice.id}
-              onClick={() => setSelectedNotice(notice)}
-              className={`cursor-pointer border-l-4 ${getPriorityColor(notice.priority)} transition-all duration-300 hover:shadow-lg hover:scale-[1.02]`}
-            >
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  {getTypeIcon(notice.notice_type)}
-                  {notice.title}
-                  <span className="ml-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    {notice.notice_number !== undefined && (
-                      <>SHIKHAR/{new Date(notice.date).getFullYear()}/{notice.notice_number}</>
-                    )}
-                  </span>
-                  <span className="ml-auto text-sm text-gray-500 font-normal">
-                    {new Date(notice.date).toLocaleDateString()}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700 dark:text-gray-300 line-clamp-2">{notice.content}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+          {loading && (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-school-blue transition ease-in-out duration-150">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading notices...
+              </div>
+            </div>
+          )}
 
-        <div className="text-center mt-8">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            For more information, contact the school office at <strong>+91 9837774888</strong>
-          </p>
+          {error && (
+            <div className="text-center py-8">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
+                <p className="text-red-600 text-sm">{error}</p>
+                <button 
+                  onClick={() => {
+                    setError(null);
+                    setLoading(true);
+                    fetchNotices();
+                  }}
+                  className="mt-2 text-red-700 hover:text-red-800 text-sm underline"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && notices.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-gray-600 dark:text-gray-400">No notices available at the moment.</p>
+            </div>
+          )}
+
+          {!loading && !error && notices.length > 0 && (
+            <div className="max-w-4xl mx-auto space-y-4">
+              {notices.map((notice) => (
+                <Card
+                  key={notice.id}
+                  onClick={() => setSelectedNotice(notice)}
+                  className={`cursor-pointer border-l-4 ${getPriorityColor(notice.priority)} transition-all duration-300 hover:shadow-lg hover:scale-[1.02]`}
+                >
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      {getTypeIcon(notice.notice_type)}
+                      {notice.title}
+                      <span className="ml-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        {notice.notice_number !== undefined && (
+                          <>SHIKHAR/{new Date(notice.date).getFullYear()}/{notice.notice_number}</>
+                        )}
+                      </span>
+                      <span className="ml-auto text-sm text-gray-500 font-normal">
+                        {new Date(notice.date).toLocaleDateString()}
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 dark:text-gray-300 line-clamp-2">{notice.content}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          <div className="text-center mt-8">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              For more information, contact the school office at <strong>+91 9837774888</strong>
+            </p>
+          </div>
         </div>
-      </div>
 
       {/* Modal */}
       {selectedNotice && (
@@ -223,7 +269,8 @@ const NoticeBoardSection = () => {
           </div>
         </div>
       )}
-    </section>
+      </section>
+    </ErrorBoundary>
   );
 };
 
