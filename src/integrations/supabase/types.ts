@@ -71,6 +71,7 @@ export type Database = {
           transfer_certificate_url: string | null
           transport_required: boolean | null
           updated_at: string | null
+          is_synced: boolean | false
         }
         Insert: {
           aadhar_card_url?: string | null
@@ -128,6 +129,8 @@ export type Database = {
           transfer_certificate_url?: string | null
           transport_required?: boolean | null
           updated_at?: string | null
+          is_synced: boolean | false
+
         }
         Update: {
           aadhar_card_url?: string | null
@@ -185,9 +188,139 @@ export type Database = {
           transfer_certificate_url?: string | null
           transport_required?: boolean | null
           updated_at?: string | null
+          is_synced: boolean | false
+
         }
         Relationships: []
       }
+      transfer_certificates: {
+        Row: {
+          id: string
+          tc_number: string
+          student_id: string
+          admission_no: string
+          sr_no: string | null
+          roll_number: number | null
+          class: string | null
+          session: string | null
+          student_name: string
+          father_name: string | null
+          mother_name: string | null
+          nationality: string | null
+          caste: string | null
+          scst: boolean | null
+          first_admission_date: string | null
+          dob: string | null
+          dob_words: string | null
+          last_class_studied: string | null
+          board_exam: string | null
+          failed_before: boolean | null
+          subjects: string | null
+          promotion_status: string | null
+          total_working_days: number | null
+          total_present_days: number | null
+          ncc_scout_guide: boolean | null
+          games_activities: string | null
+          general_conduct: string | null
+          application_date: string | null
+          issue_date: string | null
+          reason_for_leaving: string | null
+          other_remarks: string | null
+          class_teacher_sign: string | null
+          principal_sign: string | null
+          school_seal: string | null
+          status: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          tc_number: string
+          student_id: string
+          admission_no: string
+          sr_no?: string | null
+          roll_number?: number | null
+          class?: string | null
+          session?: string | null
+          student_name: string
+          father_name?: string | null
+          mother_name?: string | null
+          nationality?: string | null
+          caste?: string | null
+          scst?: boolean | null
+          first_admission_date?: string | null
+          dob?: string | null
+          dob_words?: string | null
+          last_class_studied?: string | null
+          board_exam?: string | null
+          failed_before?: boolean | null
+          subjects?: string | null
+          promotion_status?: string | null
+          total_working_days?: number | null
+          total_present_days?: number | null
+          ncc_scout_guide?: boolean | null
+          games_activities?: string | null
+          general_conduct?: string | null
+          application_date?: string | null
+          issue_date?: string | null
+          reason_for_leaving?: string | null
+          other_remarks?: string | null
+          class_teacher_sign?: string | null
+          principal_sign?: string | null
+          school_seal?: string | null
+          status?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          tc_number?: string
+          student_id?: string
+          admission_no?: string
+          sr_no?: string | null
+          roll_number?: number | null
+          class?: string | null
+          session?: string | null
+          student_name?: string
+          father_name?: string | null
+          mother_name?: string | null
+          nationality?: string | null
+          caste?: string | null
+          scst?: boolean | null
+          first_admission_date?: string | null
+          dob?: string | null
+          dob_words?: string | null
+          last_class_studied?: string | null
+          board_exam?: string | null
+          failed_before?: boolean | null
+          subjects?: string | null
+          promotion_status?: string | null
+          total_working_days?: number | null
+          total_present_days?: number | null
+          ncc_scout_guide?: boolean | null
+          games_activities?: string | null
+          general_conduct?: string | null
+          application_date?: string | null
+          issue_date?: string | null
+          reason_for_leaving?: string | null
+          other_remarks?: string | null
+          class_teacher_sign?: string | null
+          principal_sign?: string | null
+          school_seal?: string | null
+          status?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_certificates_student_id_fkey"
+            columns: ["student_id"]
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+
       bus_routes: {
         Row: {
           bus_number: string
@@ -1504,20 +1637,20 @@ export type Database = {
     }
     Enums: {
       document_type:
-        | "affiliation"
-        | "recognition"
-        | "safety"
-        | "academic"
-        | "result"
+      | "affiliation"
+      | "recognition"
+      | "safety"
+      | "academic"
+      | "result"
       notice_priority: "high" | "medium" | "low"
       notice_type:
-        | "holiday"
-        | "admission"
-        | "meeting"
-        | "event"
-        | "sports"
-        | "exam"
-        | "general"
+      | "holiday"
+      | "admission"
+      | "meeting"
+      | "event"
+      | "sports"
+      | "exam"
+      | "general"
       user_role: "admin" | "user"
     }
     CompositeTypes: {
@@ -1532,116 +1665,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-    ? R
-    : never
+  ? R
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
+    DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] &
+    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+  ? R
+  : never
+  : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
+    Insert: infer I
+  }
+  ? I
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Insert: infer I
+  }
+  ? I
+  : never
+  : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
+    Update: infer U
+  }
+  ? U
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Update: infer U
+  }
+  ? U
+  : never
+  : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Enums"]
+  | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+  : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["CompositeTypes"]
+  | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+  : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
 
 export const Constants = {
   public: {

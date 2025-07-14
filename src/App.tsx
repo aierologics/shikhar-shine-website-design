@@ -36,6 +36,7 @@ import TCVerification from "./pages/TCVerification";
 import ContactSection from "./components/ContactSection";
 import AdminFees from "./pages/AdminFees";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminTC from "./pages/AdminTC";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,7 @@ const App = () => (
                 <Route path="notices" element={<AdminNotices />} />
                 <Route path="gallery" element={<AdminGallery />} />
                 <Route path="settings" element={<AdminSettings />} />
+                <Route path="transfer-certificates" element={<AdminTC />} />
               </Route>
             </Route>
           </Routes>

@@ -52,6 +52,9 @@ const AdminTeachers = () => {
   const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
   const [activeTab, setActiveTab] = useState('teachers');
+  const [isServiceBookDialogOpen, setIsServiceBookDialogOpen] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+  const [serviceBookLeaves, setServiceBookLeaves] = useState<Leave[]>([]);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -89,8 +92,39 @@ const AdminTeachers = () => {
 
   useEffect(() => {
     fetchTeachers();
-    fetchLeaves();
   }, []);
+
+  useEffect(() => {
+    if (selectedTeacher) {
+      fetchServiceBookLeaves(selectedTeacher.id);
+    }
+  }, [selectedTeacher]);
+
+  const fetchServiceBookLeaves = async (teacherId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('teacher_leaves')
+        .select(`
+          *,
+          teachers (
+            first_name,
+            last_name
+          )
+        `)
+        .eq('teacher_id', teacherId)
+        .order('applied_at', { ascending: false });
+
+      if (error) throw error;
+      setServiceBookLeaves(data || []);
+    } catch (error) {
+      console.error('Error fetching service book leaves:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch service book leaves",
+        variant: "destructive",
+      });
+    }
+  };
 
   const fetchTeachers = async () => {
     try {
@@ -395,6 +429,121 @@ const AdminTeachers = () => {
         </div>
       </div>
 
+      <Dialog open={isServiceBookDialogOpen} onOpenChange={setIsServiceBookDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+
+
+          <div className="space-y-6 p-4" id="service-book-content">
+            <div className="flex items-center space-x-4 mb-6">
+              <img
+                src="/lovable-uploads/26ea3a81-b7f3-40c6-9fdf-a5fbc0868d77.png"
+                alt="Shikhar Shishu Sadan Logo"
+                className="h-12 w-12"
+              />
+              <h2 className="text-2xl font-bold">Shikhar Shishu Sadan Senior Secondary School</h2>
+            </div>
+            <DialogHeader>
+              <DialogTitle className='text-lg font-semibold text-center'>
+                Service Book
+              </DialogTitle>
+            </DialogHeader>
+            <Card className="border-none">
+
+              <CardContent className="p-4">
+                <h2 className="text-lg font-semibold mb-2">Basic Information</h2>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <strong>ID:</strong> {selectedTeacher?.teacher_id}
+                  </div>
+                  <div>
+                    <strong>Status:</strong>
+                    <Badge className={getStatusBadge(selectedTeacher?.status || '')} variant="outline">
+                      {selectedTeacher?.status?.replace('_', ' ') || 'N/A'}
+                    </Badge>
+                  </div>
+                  <div>
+                    <strong>Phone:</strong> {selectedTeacher?.phone}
+                  </div>
+                  <div>
+                    <strong>Email:</strong> {selectedTeacher?.email}
+                  </div>
+                  <div>
+                    <strong>Joining Date:</strong>{' '}
+                    {selectedTeacher?.joining_date && new Date(selectedTeacher.joining_date).toLocaleDateString()}
+                  </div>
+                  <div>
+                    <strong>Qualification:</strong> {selectedTeacher?.qualification}
+                  </div>
+                  <div>
+                    <strong>Experience:</strong> {selectedTeacher?.experience_years} years
+                  </div>
+                  <div>
+                    <strong>Subjects:</strong>{' '}
+                    {selectedTeacher?.subjects?.length
+                      ? selectedTeacher.subjects.join(', ')
+                      : 'N/A'}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none">
+              <CardContent className="p-4">
+                <h2 className="text-lg font-semibold mb-4">Career Timeline</h2>
+                <div className="space-y-4">
+                  {/* Placeholder data - replace with actual service record entries from Supabase if available */}
+                  <div className="p-3 bg-gray-100 rounded-md">
+                    <p className="text-sm">
+                      <strong>Joined School</strong> –{' '}
+                      {selectedTeacher?.joining_date && new Date(selectedTeacher.joining_date).toLocaleDateString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Initial appointment</p>
+                  </div>
+                  <div className="p-3 bg-gray-100 rounded-md">
+                    <p className="text-sm">
+                      <strong>Promoted to Senior Teacher</strong> – 01/04/2023
+                    </p>
+                    <p className="text-xs text-muted-foreground">Promotion record</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none">
+              <CardContent className="p-4">
+                <h2 className="text-lg font-semibold mb-4">Leave Details</h2>
+                <ul className="list-disc list-inside space-y-2 max-h-48 overflow-y-auto">
+                  {serviceBookLeaves.map(leave => (
+                    <li key={leave.id} className="bg-gray-50 p-2 rounded shadow-sm">
+                      <span className="font-semibold">{leave.leave_type.toLocaleUpperCase()}</span> from <span className="italic">{new Date(leave.start_date).toLocaleDateString()}</span> to <span className="italic">{new Date(leave.end_date).toLocaleDateString()}</span> - <Badge className={leave.status === 'approved' ? 'bg-green-100 text-green-800' : leave.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}>{leave.status}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+
+          
+          </div>
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const printContents = document.getElementById('service-book-content')?.innerHTML;
+                  const originalContents = document.body.innerHTML;
+                  if (printContents) {
+                    document.body.innerHTML = printContents;
+                    window.print();
+                    document.body.innerHTML = originalContents;
+                    window.location.reload();
+                  }
+                }}
+              >
+                Print
+              </Button>
+            </div>
+        </DialogContent>
+      </Dialog>
+
       {activeTab === 'teachers' && (
         <>
           <div className="flex justify-between items-center">
@@ -669,6 +818,17 @@ const AdminTeachers = () => {
                               onClick={() => handleDelete(teacher.id)}
                             >
                               <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedTeacher(teacher);
+                                setIsServiceBookDialogOpen(true);
+                              }}
+                              aria-label={`View service book of ${teacher.first_name} ${teacher.last_name}`}
+                            >
+                              <Users className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Edit, 
   Trash2, 
@@ -34,6 +35,8 @@ const AdminFees = () => {
   const [editingFee, setEditingFee] = useState<FeeStructure | null>(null);
   const { toast } = useToast();
 
+  const [classes, setClasses] = useState<{ id: string; class_name: string; section: string }[]>([]);
+
   const [formData, setFormData] = useState({
     class_name: '',
     admission_fee: 0,
@@ -43,6 +46,29 @@ const AdminFees = () => {
     exam_fees: '0',
     old_fee: '',
   });
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const fetchClasses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, class_name, section')
+        .order('class_name', { ascending: true });
+
+      if (error) throw error;
+      setClasses(data || []);
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch classes",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     fetchFeeStructures();
@@ -147,14 +173,27 @@ const AdminFees = () => {
     }
   };
 
-  const handleDelete = async (feeId: string) => {
-    if (!confirm('Are you sure you want to delete this fee structure?')) return;
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [feeIdToDelete, setFeeIdToDelete] = useState<string | null>(null);
+
+  const openDeleteDialog = (feeId: string) => {
+    setFeeIdToDelete(feeId);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setFeeIdToDelete(null);
+    setDeleteDialogOpen(false);
+  };
+
+  const handleDelete = async () => {
+    if (!feeIdToDelete) return;
 
     try {
       const { error } = await supabase
         .from('fee_structure')
         .delete()
-        .eq('id', feeId);
+        .eq('id', feeIdToDelete);
 
       if (error) throw error;
 
@@ -171,6 +210,8 @@ const AdminFees = () => {
         description: "Failed to delete fee structure",
         variant: "destructive",
       });
+    } finally {
+      closeDeleteDialog();
     }
   };
 
@@ -258,13 +299,22 @@ const AdminFees = () => {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="class_name">Class Name</Label>
-                <Input
-                  id="class_name"
-                  value={formData.class_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, class_name: e.target.value }))}
-                  placeholder="e.g., Class 1, Class 2, etc."
-                />
+              <Label htmlFor="class_name">Class Name</Label>
+              <Select
+                value={formData.class_name}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, class_name: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((cls) => (
+                    <SelectItem key={cls.id} value={cls.class_name}>
+                      {cls.class_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -408,7 +458,7 @@ const AdminFees = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDelete(fee.id)}
+                    onClick={() => openDeleteDialog(fee.id)}
                     className="text-red-600 hover:text-red-700"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -439,6 +489,21 @@ const AdminFees = () => {
           </Card>
         ))}
       </div>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            Are you sure you want to delete this fee structure?
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={closeDeleteDialog}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

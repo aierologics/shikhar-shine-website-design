@@ -89,6 +89,27 @@ const AdminStudents = () => {
     }
   };
 
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+
+  const fetchPendingSyncCount = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admissions')
+        .select('id', { count: 'exact' })
+        .eq('status', 'approved')
+        .filter('is_synced', 'eq', false);
+
+      if (error) throw error;
+      setPendingSyncCount(data ? data.length : 0);
+    } catch (error) {
+      console.error('Error fetching pending sync count:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPendingSyncCount();
+  }, []);
+
   const handleSync = async () => {
     setLoading(true);
     const result = await syncApprovedAdmissionsToStudents();
@@ -138,9 +159,21 @@ const AdminStudents = () => {
             console.error(`Failed to update roll number for student ${student.id}:`, updateError);
           }
         }
+
+        // Step 5: Mark synced admissions as is_synced = true
+        const { error: markSyncedError } = await supabase
+          .from('admissions')
+          .update({ is_synced: true })
+          .eq('status', 'approved')
+          .filter('is_synced', 'eq', false);
+
+        if (markSyncedError) {
+          console.error('Error marking admissions as synced:', markSyncedError);
+        }
       } catch (error) {
         console.error('Error generating roll numbers:', error);
       }
+      await fetchPendingSyncCount();
     }
 
     setLoading(false);
@@ -298,6 +331,11 @@ const AdminStudents = () => {
             className="h-9 px-4"
           >
             Sync Approved Admissions
+            {loading ? null : (
+              <span className="ml-2 inline-flex items-center justify-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                {pendingSyncCount}
+              </span>
+            )}
           </Button>
         </div>
       </div>
